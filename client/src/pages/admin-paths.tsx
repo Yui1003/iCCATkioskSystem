@@ -224,7 +224,7 @@ export default function AdminPaths() {
               </div>
 
               <div>
-                <Card className="p-6">
+                <Card className="p-6 flex flex-col h-[600px]">
                   <h2 className="text-lg font-semibold text-foreground mb-4">Walking Paths</h2>
                   {walkpaths.length === 0 ? (
                     <div className="text-center py-8">
@@ -232,7 +232,7 @@ export default function AdminPaths() {
                       <p className="text-sm text-muted-foreground">No walking paths yet</p>
                     </div>
                   ) : (
-                    <div className="space-y-3">
+                    <div className="space-y-3 overflow-y-auto flex-1 pr-2">
                       {walkpaths.map((path, index) => (
                         <div
                           key={path.id || index}
@@ -285,7 +285,7 @@ export default function AdminPaths() {
               </div>
 
               <div>
-                <Card className="p-6">
+                <Card className="p-6 flex flex-col h-[600px]">
                   <h2 className="text-lg font-semibold text-foreground mb-4">Driving Paths</h2>
                   {drivepaths.length === 0 ? (
                     <div className="text-center py-8">
@@ -293,7 +293,7 @@ export default function AdminPaths() {
                       <p className="text-sm text-muted-foreground">No driving paths yet</p>
                     </div>
                   ) : (
-                    <div className="space-y-3">
+                    <div className="space-y-3 overflow-y-auto flex-1 pr-2">
                       {drivepaths.map((path, index) => (
                         <div
                           key={path.id || index}

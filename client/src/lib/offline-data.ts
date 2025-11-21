@@ -233,15 +233,22 @@ export async function invalidateEndpointCache(
   // Layer 2: Delete from Service Worker CacheStorage
   await deleteCacheStorageEntry(endpoint);
   
-  // Layer 3: Invalidate React Query cache (uses partial matching to catch derivative keys)
+  // Layer 3: Invalidate React Query cache and force immediate refetch
   if (queryClient) {
-    // This will invalidate both exact matches and queries with additional segments
-    // e.g., ['/api/buildings'] will also invalidate ['/api/buildings', '123']
+    // Invalidate queries to mark them as stale
     await queryClient.invalidateQueries({ 
       queryKey: [endpoint],
       exact: false  // Enable partial matching for derivative keys
     });
-    console.log(`[CACHE INVALIDATION] Invalidated React Query cache for ${endpoint} (including derivatives)`);
+    
+    // Force refetch to ensure immediate update (important when staleTime is Infinity)
+    await queryClient.refetchQueries({
+      queryKey: [endpoint],
+      exact: false,  // Refetch derivatives too
+      type: 'active'  // Only refetch currently mounted queries
+    });
+    
+    console.log(`[CACHE INVALIDATION] Invalidated and refetched React Query cache for ${endpoint} (including derivatives)`);
   }
   
   console.log(`[CACHE INVALIDATION] ✅ Complete for ${endpoint} (all 3 layers cleared)`);

@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { Plus, Pencil, Trash2, Users as UsersIcon } from "lucide-react";
+import { Plus, Pencil, Trash2, Users as UsersIcon, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -18,6 +18,7 @@ import { invalidateEndpointCache } from "@/lib/offline-data";
 export default function AdminStaff() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingStaff, setEditingStaff] = useState<Staff | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
   const [formData, setFormData] = useState<InsertStaff>({
     name: "",
     position: "",
@@ -123,6 +124,25 @@ export default function AdminStaff() {
 
   // Filter buildings to only show staff-allowed POI types
   const staffAllowedBuildings = buildings.filter(b => canHaveStaff(b.type as any));
+
+  // Filter staff based on search query
+  const filteredStaff = useMemo(() => {
+    if (!searchQuery.trim()) return staff;
+    
+    const query = searchQuery.toLowerCase();
+    return staff.filter((member) => {
+      const building = buildings.find(b => b.id === member.buildingId);
+      
+      return (
+        member.name.toLowerCase().includes(query) ||
+        member.position?.toLowerCase().includes(query) ||
+        member.department?.toLowerCase().includes(query) ||
+        member.email?.toLowerCase().includes(query) ||
+        member.phone?.toLowerCase().includes(query) ||
+        building?.name.toLowerCase().includes(query)
+      );
+    });
+  }, [staff, buildings, searchQuery]);
 
   return (
     <AdminLayout>
@@ -268,6 +288,18 @@ export default function AdminStaff() {
         </div>
 
         <Card className="p-6">
+          <div className="mb-6 relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input
+              type="text"
+              placeholder="Search staff by name, position, department, building, email, or phone..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10"
+              data-testid="input-staff-search"
+            />
+          </div>
+
           {isLoading ? (
             <div className="space-y-4">
               {[1, 2, 3].map((i) => (
@@ -280,9 +312,15 @@ export default function AdminStaff() {
               <h3 className="text-xl font-medium text-foreground mb-2">No Staff Members</h3>
               <p className="text-muted-foreground">Add your first staff member to get started</p>
             </div>
+          ) : filteredStaff.length === 0 ? (
+            <div className="text-center py-16">
+              <Search className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
+              <h3 className="text-xl font-medium text-foreground mb-2">No Results Found</h3>
+              <p className="text-muted-foreground">No staff members match your search criteria</p>
+            </div>
           ) : (
             <div className="space-y-4">
-              {staff.map((member) => (
+              {filteredStaff.map((member) => (
                 <div
                   key={member.id}
                   className="flex items-center justify-between p-4 bg-muted/50 rounded-lg hover-elevate"
