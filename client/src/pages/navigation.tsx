@@ -96,6 +96,9 @@ export default function Navigation() {
               icon: 'start'
             });
 
+            let accumulatedDistance = 0;
+            const MIN_SEGMENT_DISTANCE = 50;
+
             for (let i = 0; i < routePolyline.length - 1; i++) {
               const dist = calculateDistance(
                 routePolyline[i].lat,
@@ -104,15 +107,21 @@ export default function Navigation() {
                 routePolyline[i + 1].lng
               );
               totalDist += dist;
+              accumulatedDistance += dist;
 
-              if (i < routePolyline.length - 2) {
-                steps.push({
-                  instruction: (travelMode || 'walking') === 'walking' 
-                    ? `Continue along the pathway` 
-                    : `Continue along the road`,
-                  distance: `${Math.round(dist)} m`,
-                  icon: 'straight'
-                });
+              const isLastSegment = i === routePolyline.length - 2;
+              
+              if (accumulatedDistance >= MIN_SEGMENT_DISTANCE || isLastSegment) {
+                if (!isLastSegment) {
+                  steps.push({
+                    instruction: (travelMode || 'walking') === 'walking' 
+                      ? `Continue along the pathway` 
+                      : `Continue along the road`,
+                    distance: `${Math.round(accumulatedDistance)} m`,
+                    icon: 'straight'
+                  });
+                  accumulatedDistance = 0;
+                }
               }
             }
 
