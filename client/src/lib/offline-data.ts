@@ -182,3 +182,102 @@ export async function invalidatePathCaches(): Promise<void> {
   ]);
   console.log('[OFFLINE] All path caches invalidated');
 }
+
+/**
+ * Universal cache invalidation helper - clears ALL 3 cache layers for a specific endpoint
+ * 
+ * Layer 1: In-memory cache (module-level variables)
+ * Layer 2: Service Worker CacheStorage (persistent offline cache)
+ * Layer 3: React Query cache (via queryClient.invalidateQueries)
+ * 
+ * @param endpoint - The API endpoint to invalidate (e.g., '/api/buildings', '/api/events')
+ * @param queryClient - React Query client instance for cache invalidation
+ */
+export async function invalidateEndpointCache(
+  endpoint: string, 
+  queryClient?: any
+): Promise<void> {
+  console.log(`[CACHE INVALIDATION] Starting comprehensive invalidation for ${endpoint}`);
+  
+  // Layer 1: Clear in-memory cache based on endpoint
+  // Note: Settings endpoints don't have in-memory caches, but we clear them anyway for consistency
+  switch (endpoint) {
+    case '/api/buildings':
+      cachedBuildings = null;
+      break;
+    case '/api/walkpaths':
+      cachedWalkpaths = null;
+      break;
+    case '/api/drivepaths':
+      cachedDrivepaths = null;
+      break;
+    case '/api/staff':
+      cachedStaff = null;
+      break;
+    case '/api/floors':
+      cachedFloors = null;
+      break;
+    case '/api/rooms':
+      cachedRooms = null;
+      break;
+    case '/api/events':
+      cachedEvents = null;
+      break;
+    // Settings endpoints - no in-memory cache but included for Layer 2 & 3 invalidation
+    case '/api/settings/home_inactivity_timeout':
+    case '/api/settings/global_inactivity_timeout':
+      // No in-memory cache for settings
+      break;
+  }
+  
+  // Layer 2: Delete from Service Worker CacheStorage
+  await deleteCacheStorageEntry(endpoint);
+  
+  // Layer 3: Invalidate React Query cache (uses partial matching to catch derivative keys)
+  if (queryClient) {
+    // This will invalidate both exact matches and queries with additional segments
+    // e.g., ['/api/buildings'] will also invalidate ['/api/buildings', '123']
+    await queryClient.invalidateQueries({ 
+      queryKey: [endpoint],
+      exact: false  // Enable partial matching for derivative keys
+    });
+    console.log(`[CACHE INVALIDATION] Invalidated React Query cache for ${endpoint} (including derivatives)`);
+  }
+  
+  console.log(`[CACHE INVALIDATION] ✅ Complete for ${endpoint} (all 3 layers cleared)`);
+}
+
+/**
+ * Universal cache invalidation for ALL endpoints - clears all 3 cache layers
+ * 
+ * Use this when you need to invalidate everything (e.g., major data changes)
+ * 
+ * @param queryClient - React Query client instance for cache invalidation
+ */
+export async function invalidateAllCaches(queryClient?: any): Promise<void> {
+  console.log('[CACHE INVALIDATION] Starting comprehensive invalidation for ALL endpoints');
+  
+  // Layer 1: Clear all in-memory caches
+  clearAllCache();
+  
+  // Layer 2: Delete all entries from Service Worker CacheStorage
+  await Promise.all([
+    deleteCacheStorageEntry('/api/buildings'),
+    deleteCacheStorageEntry('/api/walkpaths'),
+    deleteCacheStorageEntry('/api/drivepaths'),
+    deleteCacheStorageEntry('/api/staff'),
+    deleteCacheStorageEntry('/api/floors'),
+    deleteCacheStorageEntry('/api/rooms'),
+    deleteCacheStorageEntry('/api/events'),
+    deleteCacheStorageEntry('/api/settings/home_inactivity_timeout'),
+    deleteCacheStorageEntry('/api/settings/global_inactivity_timeout')
+  ]);
+  
+  // Layer 3: Invalidate all React Query caches
+  if (queryClient) {
+    await queryClient.invalidateQueries();
+    console.log('[CACHE INVALIDATION] Invalidated all React Query caches');
+  }
+  
+  console.log('[CACHE INVALIDATION] ✅ Complete for ALL endpoints (all 3 layers cleared)');
+}

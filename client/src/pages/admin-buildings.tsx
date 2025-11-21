@@ -14,7 +14,7 @@ import AdminLayout from "@/components/admin-layout";
 import CampusMap from "@/components/campus-map";
 import type { Building, InsertBuilding } from "@shared/schema";
 import { poiTypes, canHaveDepartments } from "@shared/schema";
-import { clearAllCache } from "@/lib/offline-data";
+import { invalidateEndpointCache } from "@/lib/offline-data";
 
 export default function AdminBuildings() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -45,9 +45,8 @@ export default function AdminBuildings() {
 
   const createMutation = useMutation({
     mutationFn: (data: InsertBuilding) => apiRequest('POST', '/api/buildings', data),
-    onSuccess: () => {
-      clearAllCache();
-      queryClient.invalidateQueries({ queryKey: ['/api/buildings'] });
+    onSuccess: async () => {
+      await invalidateEndpointCache('/api/buildings', queryClient);
       toast({ title: "Building created successfully" });
       handleCloseDialog();
     },
@@ -56,9 +55,8 @@ export default function AdminBuildings() {
   const updateMutation = useMutation({
     mutationFn: ({ id, data }: { id: string; data: InsertBuilding }) =>
       apiRequest('PUT', `/api/buildings/${id}`, data),
-    onSuccess: () => {
-      clearAllCache();
-      queryClient.invalidateQueries({ queryKey: ['/api/buildings'] });
+    onSuccess: async () => {
+      await invalidateEndpointCache('/api/buildings', queryClient);
       toast({ title: "Building updated successfully" });
       handleCloseDialog();
     },
@@ -66,9 +64,8 @@ export default function AdminBuildings() {
 
   const deleteMutation = useMutation({
     mutationFn: (id: string) => apiRequest('DELETE', `/api/buildings/${id}`, null),
-    onSuccess: () => {
-      clearAllCache();
-      queryClient.invalidateQueries({ queryKey: ['/api/buildings'] });
+    onSuccess: async () => {
+      await invalidateEndpointCache('/api/buildings', queryClient);
       toast({ title: "Building deleted successfully" });
     },
   });

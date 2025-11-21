@@ -11,6 +11,7 @@ import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, For
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient } from "@/lib/queryClient";
+import { invalidateEndpointCache } from "@/lib/offline-data";
 
 interface Setting {
   id: string;
@@ -129,9 +130,11 @@ export default function AdminSettings() {
       
       return { home: await homeResponse.json(), global: await globalResponse.json() };
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/settings/home_inactivity_timeout'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/settings/global_inactivity_timeout'] });
+    onSuccess: async () => {
+      await Promise.all([
+        invalidateEndpointCache('/api/settings/home_inactivity_timeout', queryClient),
+        invalidateEndpointCache('/api/settings/global_inactivity_timeout', queryClient)
+      ]);
       toast({
         title: "Settings Updated",
         description: "Inactivity timeouts have been updated successfully.",

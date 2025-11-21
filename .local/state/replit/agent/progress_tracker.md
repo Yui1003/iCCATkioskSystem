@@ -3,6 +3,22 @@
 [x] 3. Verify the project is working using the feedback tool
 [x] 4. Inform user the import is completed and they can start building, mark the import as completed using the complete_project_import tool
 
+## Comprehensive Cache Invalidation Implementation (Nov 21, 2025 - 2:51 PM):
+
+[x] 486. Created universal cache invalidation helpers (invalidateEndpointCache, invalidateAllCaches)
+[x] 487. Implemented 3-layer cache clearing: in-memory, Service Worker CacheStorage, React Query
+[x] 488. Added React Query partial matching (exact: false) for derivative keys
+[x] 489. Updated admin-buildings.tsx (3 mutations) to use comprehensive cache invalidation
+[x] 490. Updated admin-events.tsx (3 mutations) to use comprehensive cache invalidation
+[x] 491. Updated admin-staff.tsx (3 mutations) to use comprehensive cache invalidation
+[x] 492. Updated admin-floor-plans.tsx (6 mutations: floors + rooms) to use comprehensive cache invalidation
+[x] 493. Updated admin-paths.tsx (6 mutations: walkpaths + drivepaths) to use comprehensive cache invalidation
+[x] 494. Added settings endpoints support (/api/settings/home_inactivity_timeout, /api/settings/global_inactivity_timeout)
+[x] 495. Updated admin-settings.tsx (1 mutation) to use comprehensive cache invalidation
+[x] 496. Made all onSuccess callbacks async and awaited all cache invalidations
+[x] 497. Total 22+ admin mutations now use comprehensive 3-layer cache invalidation
+[x] 498. Verified workflow running successfully with all changes
+
 ## Latest Environment Recovery (Nov 21, 2025 - 2:45 PM):
 
 [x] 479. Configured workflow with webview output type for port 5000
