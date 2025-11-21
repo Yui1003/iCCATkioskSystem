@@ -1,5 +1,5 @@
-const CACHE_NAME = 'iccat-v4';
-const DATA_CACHE_NAME = 'iccat-data-v4';
+const CACHE_NAME = 'iccat-v5';
+const DATA_CACHE_NAME = 'iccat-data-v5';
 
 const urlsToCache = [
   '/',
@@ -165,32 +165,25 @@ self.addEventListener('fetch', (event) => {
   if (url.pathname.startsWith('/api/')) {
     event.respondWith(
       caches.open(DATA_CACHE_NAME).then((cache) => {
-        return cache.match(request).then((cachedResponse) => {
-          if (cachedResponse) {
-            console.log(`[SW] Serving ${url.pathname} from cache`);
-            fetch(request)
-              .then((response) => {
-                if (response.status === 200) {
-                  cache.put(request, response.clone());
-                }
-              })
-              .catch(() => {});
-            return cachedResponse;
-          }
-          
-          console.log(`[SW] Fetching ${url.pathname} from network`);
-          return fetch(request)
-            .then((response) => {
-              if (response.status === 200) {
-                cache.put(request, response.clone());
+        return fetch(request)
+          .then((response) => {
+            if (response.status === 200) {
+              console.log(`[SW] Network-first: Fetched fresh ${url.pathname} from server`);
+              cache.put(request, response.clone());
+            }
+            return response;
+          })
+          .catch((error) => {
+            console.log(`[SW] Network failed for ${url.pathname}, falling back to cache`);
+            return cache.match(request).then((cachedResponse) => {
+              if (cachedResponse) {
+                console.log(`[SW] Serving ${url.pathname} from cache (offline)`);
+                return cachedResponse;
               }
-              return response;
-            })
-            .catch((error) => {
-              console.error(`[SW] Failed to fetch ${url.pathname}:`, error);
+              console.error(`[SW] No cache available for ${url.pathname}:`, error);
               throw error;
             });
-        });
+          });
       })
     );
     return;

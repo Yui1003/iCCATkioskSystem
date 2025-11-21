@@ -199,6 +199,7 @@ export default function PathDrawingMap({
         </div>
         <div className="flex gap-1">
           <Button
+            type="button"
             size="sm"
             variant={isDrawing ? "secondary" : "default"}
             onClick={() => setIsDrawing(!isDrawing)}
@@ -207,6 +208,7 @@ export default function PathDrawingMap({
             {isDrawing ? 'Stop Drawing' : 'Start Drawing'}
           </Button>
           <Button
+            type="button"
             size="sm"
             variant="outline"
             onClick={handleUndo}
@@ -216,6 +218,7 @@ export default function PathDrawingMap({
             <Undo className="w-4 h-4" />
           </Button>
           <Button
+            type="button"
             size="sm"
             variant="outline"
             onClick={handleClear}

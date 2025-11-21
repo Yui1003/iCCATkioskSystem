@@ -1,7 +1,7 @@
 import { QueryClient, QueryFunction } from "@tanstack/react-query";
 import baselineData from "./baseline-data.json";
 
-const DATA_CACHE_NAME = 'iccat-data-v3';
+const DATA_CACHE_NAME = 'iccat-data-v5';
 
 async function throwIfResNotOk(res: Response) {
   if (!res.ok) {
@@ -28,13 +28,17 @@ export async function apiRequest(
 
 type UnauthorizedBehavior = "returnNull" | "throw";
 
-const offlineFirstQueryFn: QueryFunction = async ({ queryKey }) => {
+const networkFirstQueryFn: QueryFunction = async ({ queryKey }) => {
   const url = queryKey.join("/") as string;
   
   try {
-    const res = await fetch(url, { credentials: "include" });
+    const res = await fetch(url, { 
+      credentials: "include",
+      cache: 'no-cache'
+    });
     if (res.ok) {
       const data = await res.json();
+      console.log(`[QUERY] Network-first: Fetched fresh ${url} from server`);
       
       // Update CacheStorage with fresh data when network fetch succeeds
       if (window.caches) {
@@ -44,16 +48,15 @@ const offlineFirstQueryFn: QueryFunction = async ({ queryKey }) => {
             headers: { 'Content-Type': 'application/json' }
           });
           await cache.put(url, responseToCache);
-          console.log(`[OFFLINE-QUERY] Updated CacheStorage for ${url}`);
         } catch (cacheError) {
-          console.error(`[OFFLINE-QUERY] Failed to update CacheStorage for ${url}:`, cacheError);
+          console.error(`[QUERY] Failed to update CacheStorage for ${url}:`, cacheError);
         }
       }
       
       return data;
     }
   } catch (fetchError) {
-    console.log(`[OFFLINE-QUERY] Fetch failed for ${url} (offline or network error), trying cache...`);
+    console.log(`[QUERY] Network failed for ${url}, falling back to cache...`);
   }
 
   if (window.caches) {
@@ -61,17 +64,17 @@ const offlineFirstQueryFn: QueryFunction = async ({ queryKey }) => {
       const cache = await window.caches.open(DATA_CACHE_NAME);
       const cachedResponse = await cache.match(url);
       if (cachedResponse) {
-        console.log(`[OFFLINE-QUERY] Retrieved ${url} from CacheStorage`);
+        console.log(`[QUERY] Retrieved ${url} from CacheStorage (offline)`);
         return await cachedResponse.json();
       }
     } catch (cacheError) {
-      console.error(`[OFFLINE-QUERY] CacheStorage error for ${url}:`, cacheError);
+      console.error(`[QUERY] CacheStorage error for ${url}:`, cacheError);
     }
   }
 
   const dataKey = url.replace('/api/', '') as keyof typeof baselineData;
   if (dataKey in baselineData) {
-    console.log(`[OFFLINE-QUERY] Using embedded baseline data for ${dataKey}`);
+    console.log(`[QUERY] Using embedded baseline data for ${dataKey}`);
     return baselineData[dataKey];
   }
 
@@ -98,10 +101,10 @@ export const getQueryFn: <T>(options: {
 export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      queryFn: offlineFirstQueryFn,
+      queryFn: networkFirstQueryFn,
       refetchInterval: false,
-      refetchOnWindowFocus: false,
-      staleTime: Infinity,
+      refetchOnWindowFocus: true,
+      staleTime: 0,
       retry: false,
     },
     mutations: {
