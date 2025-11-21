@@ -87,49 +87,12 @@ export default function Navigation() {
               return;
             }
 
-            const steps = [];
-            let totalDist = 0;
-
-            steps.push({
-              instruction: `Start at ${startBuilding.name}`,
-              distance: '0 m',
-              icon: 'start'
-            });
-
-            let accumulatedDistance = 0;
-            const MIN_SEGMENT_DISTANCE = 50;
-
-            for (let i = 0; i < routePolyline.length - 1; i++) {
-              const dist = calculateDistance(
-                routePolyline[i].lat,
-                routePolyline[i].lng,
-                routePolyline[i + 1].lat,
-                routePolyline[i + 1].lng
-              );
-              totalDist += dist;
-              accumulatedDistance += dist;
-
-              const isLastSegment = i === routePolyline.length - 2;
-              
-              if (accumulatedDistance >= MIN_SEGMENT_DISTANCE || isLastSegment) {
-                if (!isLastSegment) {
-                  steps.push({
-                    instruction: (travelMode || 'walking') === 'walking' 
-                      ? `Continue along the pathway` 
-                      : `Continue along the road`,
-                    distance: `${Math.round(accumulatedDistance)} m`,
-                    icon: 'straight'
-                  });
-                  accumulatedDistance = 0;
-                }
-              }
-            }
-
-            steps.push({
-              instruction: `Arrive at ${endBuilding.name}`,
-              distance: '0 m',
-              icon: 'end'
-            });
+            const { steps, totalDistance } = generateSmartSteps(
+              routePolyline,
+              travelMode || 'walking',
+              startBuilding.name,
+              endBuilding.name
+            );
 
             setRoute({
               start: startBuilding as any,
@@ -137,7 +100,7 @@ export default function Navigation() {
               mode: travelMode || 'walking',
               polyline: routePolyline,
               steps,
-              totalDistance: `${Math.round(totalDist)} m`
+              totalDistance
             });
           } catch (error) {
             console.error('Error generating route:', error);
@@ -160,6 +123,126 @@ export default function Navigation() {
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
 
     return R * c;
+  };
+
+  const calculateBearing = (lat1: number, lng1: number, lat2: number, lng2: number): number => {
+    const φ1 = lat1 * Math.PI / 180;
+    const φ2 = lat2 * Math.PI / 180;
+    const Δλ = (lng2 - lng1) * Math.PI / 180;
+
+    const y = Math.sin(Δλ) * Math.cos(φ2);
+    const x = Math.cos(φ1) * Math.sin(φ2) - Math.sin(φ1) * Math.cos(φ2) * Math.cos(Δλ);
+    const θ = Math.atan2(y, x);
+
+    return (θ * 180 / Math.PI + 360) % 360;
+  };
+
+  const getTurnInstruction = (angleDiff: number, travelMode: string): { instruction: string; icon: string } => {
+    const absAngle = Math.abs(angleDiff);
+    const isWalking = travelMode === 'walking';
+    const road = isWalking ? 'pathway' : 'road';
+
+    if (absAngle < 20) {
+      return { instruction: `Continue straight on the ${road}`, icon: 'straight' };
+    } else if (absAngle < 45) {
+      return {
+        instruction: angleDiff > 0 ? `Slight right on the ${road}` : `Slight left on the ${road}`,
+        icon: angleDiff > 0 ? 'slight-right' : 'slight-left'
+      };
+    } else if (absAngle < 135) {
+      return {
+        instruction: angleDiff > 0 ? `Turn right on the ${road}` : `Turn left on the ${road}`,
+        icon: angleDiff > 0 ? 'right' : 'left'
+      };
+    } else if (absAngle < 165) {
+      return {
+        instruction: angleDiff > 0 ? `Sharp right on the ${road}` : `Sharp left on the ${road}`,
+        icon: angleDiff > 0 ? 'sharp-right' : 'sharp-left'
+      };
+    } else {
+      return { instruction: `Make a U-turn on the ${road}`, icon: 'u-turn' };
+    }
+  };
+
+  const generateSmartSteps = (routePolyline: Array<{ lat: number; lng: number }>, travelMode: 'walking' | 'driving', startName: string, endName: string) => {
+    const steps = [];
+    let totalDist = 0;
+
+    steps.push({
+      instruction: `Start at ${startName}`,
+      distance: '0 m',
+      icon: 'start'
+    });
+
+    // Calculate bearings for each segment
+    const bearings: number[] = [];
+    for (let i = 0; i < routePolyline.length - 1; i++) {
+      const bearing = calculateBearing(
+        routePolyline[i].lat,
+        routePolyline[i].lng,
+        routePolyline[i + 1].lat,
+        routePolyline[i + 1].lng
+      );
+      bearings.push(bearing);
+    }
+
+    // Generate turn-based directions
+    let accumulatedDistance = 0;
+
+    for (let i = 0; i < routePolyline.length - 1; i++) {
+      const dist = calculateDistance(
+        routePolyline[i].lat,
+        routePolyline[i].lng,
+        routePolyline[i + 1].lat,
+        routePolyline[i + 1].lng
+      );
+      totalDist += dist;
+      accumulatedDistance += dist;
+
+      const isLastSegment = i === routePolyline.length - 2;
+      
+      // Check if there's a significant direction change
+      let hasSignificantTurn = false;
+      if (i < bearings.length - 1) {
+        let angleDiff = bearings[i + 1] - bearings[i];
+        // Normalize angle difference to -180 to 180
+        if (angleDiff > 180) angleDiff -= 360;
+        if (angleDiff < -180) angleDiff += 360;
+        
+        // Consider it a significant turn if angle change is more than 20 degrees
+        hasSignificantTurn = Math.abs(angleDiff) >= 20;
+        
+        if (hasSignificantTurn || isLastSegment) {
+          if (accumulatedDistance > 0 && !isLastSegment) {
+            const turnInfo = getTurnInstruction(angleDiff, travelMode);
+            steps.push({
+              instruction: turnInfo.instruction,
+              distance: `${Math.round(accumulatedDistance)} m`,
+              icon: turnInfo.icon
+            });
+            accumulatedDistance = 0;
+          }
+        }
+      }
+    }
+
+    // Add final segment if there's accumulated distance
+    if (accumulatedDistance > 0) {
+      const isWalking = travelMode === 'walking';
+      steps.push({
+        instruction: `Continue to destination on the ${isWalking ? 'pathway' : 'road'}`,
+        distance: `${Math.round(accumulatedDistance)} m`,
+        icon: 'straight'
+      });
+    }
+
+    steps.push({
+      instruction: `Arrive at ${endName}`,
+      distance: '0 m',
+      icon: 'end'
+    });
+
+    return { steps, totalDistance: `${Math.round(totalDist)} m` };
   };
 
   const calculateRouteClientSide = async (
@@ -205,40 +288,12 @@ export default function Navigation() {
         return;
       }
 
-      const steps = [];
-      let totalDist = 0;
-
-      steps.push({
-        instruction: `Start at ${selectedStart.name}`,
-        distance: '0 m',
-        icon: 'start'
-      });
-
-      for (let i = 0; i < routePolyline.length - 1; i++) {
-        const dist = calculateDistance(
-          routePolyline[i].lat,
-          routePolyline[i].lng,
-          routePolyline[i + 1].lat,
-          routePolyline[i + 1].lng
-        );
-        totalDist += dist;
-
-        if (i < routePolyline.length - 2) {
-          steps.push({
-            instruction: mode === 'walking' 
-              ? `Continue along the pathway` 
-              : `Continue along the road`,
-            distance: `${Math.round(dist)} m`,
-            icon: 'straight'
-          });
-        }
-      }
-
-      steps.push({
-        instruction: `Arrive at ${selectedEnd.name}`,
-        distance: '0 m',
-        icon: 'end'
-      });
+      const { steps, totalDistance } = generateSmartSteps(
+        routePolyline,
+        mode,
+        selectedStart.name,
+        selectedEnd.name
+      );
 
       setRoute({
         start: selectedStart,
@@ -246,7 +301,7 @@ export default function Navigation() {
         mode,
         polyline: routePolyline,
         steps,
-        totalDistance: `${Math.round(totalDist)} m`
+        totalDistance
       });
     } catch (error) {
       console.error('Error generating route:', error);
@@ -298,40 +353,12 @@ export default function Navigation() {
         return;
       }
 
-      const steps = [];
-      let totalDist = 0;
-
-      steps.push({
-        instruction: `Start at ${start.name}`,
-        distance: '0 m',
-        icon: 'start'
-      });
-
-      for (let i = 0; i < routePolyline.length - 1; i++) {
-        const dist = calculateDistance(
-          routePolyline[i].lat,
-          routePolyline[i].lng,
-          routePolyline[i + 1].lat,
-          routePolyline[i + 1].lng
-        );
-        totalDist += dist;
-
-        if (i < routePolyline.length - 2) {
-          steps.push({
-            instruction: travelMode === 'walking' 
-              ? `Continue along the pathway` 
-              : `Continue along the road`,
-            distance: `${Math.round(dist)} m`,
-            icon: 'straight'
-          });
-        }
-      }
-
-      steps.push({
-        instruction: `Arrive at ${directionsDestination.name}`,
-        distance: '0 m',
-        icon: 'end'
-      });
+      const { steps, totalDistance } = generateSmartSteps(
+        routePolyline,
+        travelMode,
+        start.name,
+        directionsDestination.name
+      );
 
       setRoute({
         start,
@@ -339,7 +366,7 @@ export default function Navigation() {
         mode: travelMode,
         polyline: routePolyline,
         steps,
-        totalDistance: `${Math.round(totalDist)} m`
+        totalDistance
       });
     } catch (error) {
       console.error('Error generating route:', error);
