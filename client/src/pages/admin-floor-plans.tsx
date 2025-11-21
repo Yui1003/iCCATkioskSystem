@@ -14,6 +14,7 @@ import type { Building, Floor, Room } from "@shared/schema";
 import { poiTypes, canHaveFloorPlan, floorPlanEligibleTypes } from "@shared/schema";
 import FloorPlanViewer from "@/components/floor-plan-viewer";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { clearAllCache } from "@/lib/offline-data";
 
 export default function AdminFloorPlans() {
   const [selectedBuildingId, setSelectedBuildingId] = useState<string>("");
@@ -40,6 +41,7 @@ export default function AdminFloorPlans() {
   const createFloor = useMutation({
     mutationFn: (data: any) => apiRequest('POST', '/api/floors', data),
     onSuccess: () => {
+      clearAllCache();
       queryClient.invalidateQueries({ queryKey: ['/api/floors'] });
       toast({ title: "Floor created successfully" });
       setIsFloorDialogOpen(false);
@@ -50,6 +52,7 @@ export default function AdminFloorPlans() {
   const updateFloor = useMutation({
     mutationFn: ({ id, data }: { id: string; data: any }) => apiRequest('PUT', `/api/floors/${id}`, data),
     onSuccess: () => {
+      clearAllCache();
       queryClient.invalidateQueries({ queryKey: ['/api/floors'] });
       toast({ title: "Floor updated successfully" });
       setIsFloorDialogOpen(false);
@@ -61,6 +64,7 @@ export default function AdminFloorPlans() {
   const createRoom = useMutation({
     mutationFn: (data: any) => apiRequest('POST', '/api/rooms', data),
     onSuccess: () => {
+      clearAllCache();
       queryClient.invalidateQueries({ queryKey: ['/api/rooms'] });
       toast({ title: "Room created successfully" });
     },
@@ -69,6 +73,7 @@ export default function AdminFloorPlans() {
   const updateRoom = useMutation({
     mutationFn: ({ id, data }: { id: string; data: any }) => apiRequest('PUT', `/api/rooms/${id}`, data),
     onSuccess: () => {
+      clearAllCache();
       queryClient.invalidateQueries({ queryKey: ['/api/rooms'] });
       toast({ title: "Room updated successfully" });
     },
@@ -77,6 +82,7 @@ export default function AdminFloorPlans() {
   const deleteFloor = useMutation({
     mutationFn: (id: string) => apiRequest('DELETE', `/api/floors/${id}`, null),
     onSuccess: () => {
+      clearAllCache();
       queryClient.invalidateQueries({ queryKey: ['/api/floors'] });
       toast({ title: "Floor deleted successfully" });
       setDeletingFloor(null);
@@ -86,6 +92,7 @@ export default function AdminFloorPlans() {
   const deleteRoom = useMutation({
     mutationFn: (id: string) => apiRequest('DELETE', `/api/rooms/${id}`, null),
     onSuccess: () => {
+      clearAllCache();
       queryClient.invalidateQueries({ queryKey: ['/api/rooms'] });
       toast({ title: "Room deleted successfully" });
     },

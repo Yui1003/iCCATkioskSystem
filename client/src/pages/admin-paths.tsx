@@ -14,6 +14,7 @@ import CampusMap from "@/components/campus-map";
 import PathDrawingMap from "@/components/path-drawing-map";
 import type { Building } from "@shared/schema";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { clearPathCache } from "@/lib/offline-data";
 
 interface PathNode {
   lat: number;
@@ -45,6 +46,7 @@ export default function AdminPaths() {
   const createWalkpath = useMutation({
     mutationFn: (data: any) => apiRequest('POST', '/api/walkpaths', data),
     onSuccess: () => {
+      clearPathCache();
       queryClient.invalidateQueries({ queryKey: ['/api/walkpaths'] });
       toast({ title: "Walkpath created successfully" });
       setIsDialogOpen(false);
@@ -56,6 +58,7 @@ export default function AdminPaths() {
   const createDrivepath = useMutation({
     mutationFn: (data: any) => apiRequest('POST', '/api/drivepaths', data),
     onSuccess: () => {
+      clearPathCache();
       queryClient.invalidateQueries({ queryKey: ['/api/drivepaths'] });
       toast({ title: "Drivepath created successfully" });
       setIsDialogOpen(false);
@@ -67,6 +70,7 @@ export default function AdminPaths() {
   const updateWalkpath = useMutation({
     mutationFn: ({ id, data }: { id: string; data: any }) => apiRequest('PUT', `/api/walkpaths/${id}`, data),
     onSuccess: () => {
+      clearPathCache();
       queryClient.invalidateQueries({ queryKey: ['/api/walkpaths'] });
       toast({ title: "Walkpath updated successfully" });
       setIsDialogOpen(false);
@@ -79,6 +83,7 @@ export default function AdminPaths() {
   const updateDrivepath = useMutation({
     mutationFn: ({ id, data }: { id: string; data: any }) => apiRequest('PUT', `/api/drivepaths/${id}`, data),
     onSuccess: () => {
+      clearPathCache();
       queryClient.invalidateQueries({ queryKey: ['/api/drivepaths'] });
       toast({ title: "Drivepath updated successfully" });
       setIsDialogOpen(false);
@@ -91,6 +96,7 @@ export default function AdminPaths() {
   const deleteWalkpath = useMutation({
     mutationFn: (id: string) => apiRequest('DELETE', `/api/walkpaths/${id}`, null),
     onSuccess: () => {
+      clearPathCache();
       queryClient.invalidateQueries({ queryKey: ['/api/walkpaths'] });
       toast({ title: "Walkpath deleted successfully" });
       setDeletingPath(null);
@@ -100,6 +106,7 @@ export default function AdminPaths() {
   const deleteDrivepath = useMutation({
     mutationFn: (id: string) => apiRequest('DELETE', `/api/drivepaths/${id}`, null),
     onSuccess: () => {
+      clearPathCache();
       queryClient.invalidateQueries({ queryKey: ['/api/drivepaths'] });
       toast({ title: "Drivepath deleted successfully" });
       setDeletingPath(null);

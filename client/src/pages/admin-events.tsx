@@ -14,6 +14,7 @@ import { queryClient, apiRequest } from "@/lib/queryClient";
 import AdminLayout from "@/components/admin-layout";
 import type { Event, InsertEvent, Building } from "@shared/schema";
 import { eventClassifications } from "@shared/schema";
+import { clearAllCache } from "@/lib/offline-data";
 
 export default function AdminEvents() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -41,6 +42,7 @@ export default function AdminEvents() {
   const createMutation = useMutation({
     mutationFn: (data: InsertEvent) => apiRequest('POST', '/api/events', data),
     onSuccess: () => {
+      clearAllCache();
       queryClient.invalidateQueries({ queryKey: ['/api/events'] });
       toast({ title: "Event created successfully" });
       handleCloseDialog();
@@ -51,6 +53,7 @@ export default function AdminEvents() {
     mutationFn: ({ id, data }: { id: string; data: InsertEvent }) =>
       apiRequest('PUT', `/api/events/${id}`, data),
     onSuccess: () => {
+      clearAllCache();
       queryClient.invalidateQueries({ queryKey: ['/api/events'] });
       toast({ title: "Event updated successfully" });
       handleCloseDialog();
@@ -60,6 +63,7 @@ export default function AdminEvents() {
   const deleteMutation = useMutation({
     mutationFn: (id: string) => apiRequest('DELETE', `/api/events/${id}`, null),
     onSuccess: () => {
+      clearAllCache();
       queryClient.invalidateQueries({ queryKey: ['/api/events'] });
       toast({ title: "Event deleted successfully" });
     },

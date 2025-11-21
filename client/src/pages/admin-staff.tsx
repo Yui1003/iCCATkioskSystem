@@ -13,6 +13,7 @@ import { queryClient, apiRequest } from "@/lib/queryClient";
 import AdminLayout from "@/components/admin-layout";
 import type { Staff, InsertStaff, Building } from "@shared/schema";
 import { canHaveDepartments, canHaveStaff } from "@shared/schema";
+import { clearAllCache } from "@/lib/offline-data";
 
 export default function AdminStaff() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -41,6 +42,7 @@ export default function AdminStaff() {
   const createMutation = useMutation({
     mutationFn: (data: InsertStaff) => apiRequest('POST', '/api/staff', data),
     onSuccess: () => {
+      clearAllCache();
       queryClient.invalidateQueries({ queryKey: ['/api/staff'] });
       toast({ title: "Staff member created successfully" });
       handleCloseDialog();
@@ -51,6 +53,7 @@ export default function AdminStaff() {
     mutationFn: ({ id, data }: { id: string; data: InsertStaff }) =>
       apiRequest('PUT', `/api/staff/${id}`, data),
     onSuccess: () => {
+      clearAllCache();
       queryClient.invalidateQueries({ queryKey: ['/api/staff'] });
       toast({ title: "Staff member updated successfully" });
       handleCloseDialog();
@@ -60,6 +63,7 @@ export default function AdminStaff() {
   const deleteMutation = useMutation({
     mutationFn: (id: string) => apiRequest('DELETE', `/api/staff/${id}`, null),
     onSuccess: () => {
+      clearAllCache();
       queryClient.invalidateQueries({ queryKey: ['/api/staff'] });
       toast({ title: "Staff member deleted successfully" });
     },
