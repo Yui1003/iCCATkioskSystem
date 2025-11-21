@@ -1,0 +1,153 @@
+Do NOT rewrite or modify the map system.
+Only generate accurate, correct icon images for all POI types listed below.
+
+I want you to generate PNG or SVG icons that clearly and accurately represent each POI.
+The icons must be visually consistent: simple, flat-style, minimal, easy to recognize on a map.
+
+You must NOT use random or unrelated symbols.
+You must NOT reuse the same icon for different POIs.
+You must NOT assign incorrect meanings (example: do NOT use a padlock for Gate).
+
+Below are the POIs and EXACTLY what each icon must visually show:
+
+✔ REQUIRED ICONS AND THEIR CORRECT VISUAL MEANINGS
+1. Building
+
+A simple building shape with windows.
+
+2. Gate
+
+A gate or entrance arch — NOT a padlock.
+
+3. Canteen
+
+A plate with spoon & fork, OR a tray with food.
+
+4. Food Stall
+
+A small stall/cart with a canopy, or a food stand icon.
+
+5. Library
+
+A book or a stack of books.
+
+6. Student Lounge
+
+A couch/sofa or chair icon.
+
+7. Car Parking
+
+A “P” symbol with a car silhouette.
+
+8. Motorcycle Parking
+
+A “P” symbol with a motorcycle silhouette.
+
+9. Comfort Room (Restroom)
+
+Male & female restroom symbols.
+
+10. Lecture Hall / Classroom
+
+A chalkboard or presentation board with a person.
+
+11. Administrative Office
+
+A briefcase, office building, or document icon.
+
+12. Residence Hall / Dormitory
+
+A building with a bed icon, or a bed symbol.
+
+13. Health Services / Clinic
+
+A medical cross.
+
+14. Gym / Sports Facility
+
+A dumbbell or sports icon.
+
+15. Auditorium / Theater
+
+A stage with curtains, or a spotlight icon.
+
+16. Laboratory
+
+A flask or test tube.
+
+17. Faculty Lounge / Staff Room
+
+A coffee mug, office desk, or lounge chair.
+
+18. Study Area
+
+A desk + lamp, or book + laptop.
+
+19. Bookstore
+
+A book + price tag, or book + shopping bag.
+
+20. ATM
+
+An ATM machine icon or credit card.
+
+21. Chapel / Prayer Room
+
+A chapel silhouette or simple cross.
+
+22. Green Space / Courtyard
+
+A tree or leaf icon.
+
+23. Bus Stop / Shuttle Stop
+
+A bus icon.
+
+24. Bike Parking
+
+A bicycle with a “P” icon.
+
+25. Security Office / Campus Police
+
+A security badge or shield icon.
+
+26. Waste / Recycling Station
+
+A trash can or recycling arrows.
+
+27. Water Fountain
+
+A drinking fountain icon or water droplet.
+
+28. Print/Copy Center
+
+A printer or copy machine icon.
+
+29. Other
+
+A simple question mark or generic pin.
+
+✔ STYLE REQUIREMENTS
+
+All icons must:
+
+Be simple and readable
+
+Use consistent line thickness
+
+Use the same visual style (flat/outline) with green background like on the existing markers
+
+Be exported in PNG or SVG
+
+Fit inside a 32×32 or 48×48 px area
+
+Do NOT use highly detailed, photo-style icons.
+
+✔ FILE STRUCTURE REQUIREMENT
+
+Place all icons inside an icons/ folder.
+File names should match the POI names exactly (e.g., gate.png, canteen.png, etc.).
+
+IMPLEMENTATION
+Automatically change the marker icons on the map when the building type is changed according to what is selected.
+

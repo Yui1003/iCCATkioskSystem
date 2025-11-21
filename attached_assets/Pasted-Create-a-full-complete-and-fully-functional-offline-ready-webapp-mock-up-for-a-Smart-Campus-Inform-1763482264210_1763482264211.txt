@@ -1,0 +1,318 @@
+Create a full, complete, and fully functional offline-ready webapp mock-up for a Smart Campus Information Kiosk called iCCAT: Interactive Campus Companion and Assistance Terminal for Cavite State University CCAT Campus.
+
+The output must include ALL FILES (HTML, CSS, JS, data.json, sw.js) in a ready-to-run project.
+Everything must run fully offline except map tiles if uncached.
+
+⭐ 1. Project Behavior Overview
+
+You must generate a complete kiosk-style webapp with the following user modules:
+
+1. Homepage / Landing Page
+
+A fullscreen landing page with large buttons for:
+
+Campus Navigation
+
+Events & Announcements
+
+Staff Finder
+
+About the Kiosk
+
+Small link at bottom: Admin Access
+
+Buttons must be touch-friendly, animated, and lead to working pages.
+
+⭐ 2. Shared Campus Map (Used by ALL features)
+
+Use Leaflet.js or MapLibre GL JS.
+
+Map Requirements:
+
+Center at: [14.4035451, 120.8659794] (CVSU CCAT Campus)
+
+Fully pannable, zoomable, and responsive
+
+Reused by:
+
+Navigation
+
+Building info popups
+
+Admin building editor
+
+Admin walkpath/drivepath editor
+
+When a building marker is clicked:
+
+A building information modal must appear showing:
+
+Building name
+
+Description
+
+Departments
+
+Staff assigned
+
+Floors
+
+Floor plan preview
+
+Button: Open Floor Plan
+
+⭐ 3. Navigation System
+
+Full working navigation:
+
+User selects Start Point
+
+User selects Destination
+
+User chooses Walking or Driving
+
+Route is generated using the existing walkpaths/drivepaths
+(MUST NOT be a straight line)
+
+Route is visually displayed using multi-node polylines
+
+Step-by-step directions displayed in a side panel
+
+“Restart Navigation” button returns to homepage
+
+⭐ 4. Admin Panel
+
+Accessible via Admin Login.
+
+Admin can manage the following:
+
+🏫 A. Building Editor
+
+Admin must be able to:
+
+Add building
+
+Edit building
+
+Delete building
+
+Drag building marker to reposition
+
+Edit building description, departments, staff assignment
+
+Open floor plan manager
+
+Building info modal must be draggable on screen
+
+All stored in data.json.
+
+🌉 B. Walkpaths & Drivepaths Editor
+
+Admin must be able to:
+
+Draw walkpaths (multi-node polylines)
+
+Draw drivepaths (multi-node polylines)
+
+Paths must NOT be straight lines — must support multiple points
+
+Nodes must be draggable and deletable
+
+Paths editable anytime
+
+Paths stored in data.json
+
+🗺️ C. Floor Plan Manager (IMPORTANT REQUIREMENT)
+
+When admin opens a building’s floor plan:
+
+Admin can:
+
+Upload a floor plan image
+
+Each floor can have its own image
+
+Add room markers on top of the image
+
+Drag room markers around
+
+Edit room name, type, department
+
+Delete room markers
+
+Room markers must be clickable to show data
+
+Floor plan viewer must behave like the map
+
+All floor plan data saved to data.json
+
+Room data must include:
+
+Room name
+
+Room type (classroom, office, lab, etc.)
+
+Department
+
+X/Y position inside floor plan image
+
+Floor number
+
+👥 D. Staff Management
+
+Admin can:
+
+Add/edit/delete staff
+
+Assign staff to building, department, floor, or specific room
+
+Upload staff photos
+
+Store all staff in data.json
+
+🗓️ E. Events & Announcements
+
+Admin can:
+
+Add/edit/delete events
+
+Event details include title, date, description, image
+
+User-side event cards should open modals
+
+All stored in data.json.
+
+⭐ 5. User Features
+
+These must be fully working:
+
+✔ Building Info Panel
+
+Shows building info + staff + floors + floor plan preview.
+
+✔ Floor Plan Modal
+
+Displays uploaded floor plan with interactive room markers.
+
+✔ Staff Finder
+
+Search by:
+
+Staff name
+
+Building
+
+Department
+
+Show staff info and photo.
+
+✔ Events & Announcements
+
+Display event cards + popup modal for details.
+
+✔ Navigation Simulation
+
+Start → End navigation using walkpaths/drivepaths.
+
+⭐ 6. Offline Support
+
+Create a service worker (sw.js) that caches:
+
+index.html
+
+CSS + JS files
+
+data.json
+
+Icons and images
+
+Staff photos
+
+Floor plan images
+
+Cached map tiles (if permitted)
+
+The kiosk must work offline after first load.
+
+⭐ 7. Project File Structure
+
+Gemini must output all of these files:
+
+index.html
+styles.css
+script.js
+sw.js
+data.json
+assets/
+    icons/
+    staff_photos/
+    floor_plans/
+
+⭐ 8. JavaScript Requirements
+
+Your script.js must include:
+
+Routing and page switching
+
+Leaflet map init (shared)
+
+Building markers + modals
+
+Admin tools for buildings, floors, staff, events, walkpaths, and drivepaths
+
+Floor plan editor with draggable room markers
+
+Loading and saving to data.json
+
+Smooth UI transitions
+
+Real-time clock
+
+⭐ 9. Data Storage in data.json
+
+Must include:
+
+Building list
+
+Floor plan data
+
+Room markers
+
+Walkpaths
+
+Drivepaths
+
+Staff
+
+Events
+
+Departments
+
+Also include mock data that I can delete later:
+
+3 sample buildings
+
+1 floor plan with 3 sample rooms
+
+5 staff profiles
+
+3 walkpaths
+
+1 drivepath
+
+2 sample events
+
+⭐ 10. Final Output Requirements
+
+Gemini must output:
+
+✔ A complete, working, offline-capable smart kiosk webapp
+✔ All source code combined into multiple downloadable files
+✔ A functional admin system
+✔ A navigation engine
+✔ Editable map & floor plan system
+✔ Working modals, search bars, UI animations
+
+⭐ PROMPT END
+
+(Everything above must be followed exactly.)
