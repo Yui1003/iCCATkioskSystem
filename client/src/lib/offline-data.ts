@@ -18,7 +18,23 @@ async function fetchWithCacheFallback<T>(
   try {
     const response = await fetch(url);
     if (response.ok) {
-      return await response.json();
+      const data = await response.json();
+      
+      // Update CacheStorage with fresh data when network fetch succeeds
+      if (window.caches) {
+        try {
+          const cache = await window.caches.open(DATA_CACHE_NAME);
+          const responseToCache = new Response(JSON.stringify(data), {
+            headers: { 'Content-Type': 'application/json' }
+          });
+          await cache.put(url, responseToCache);
+          console.log(`[OFFLINE] Updated CacheStorage for ${url}`);
+        } catch (cacheError) {
+          console.error(`[OFFLINE] Failed to update CacheStorage for ${url}:`, cacheError);
+        }
+      }
+      
+      return data;
     }
   } catch (fetchError) {
     console.log(`[OFFLINE] Fetch failed for ${url} (offline or network error), trying cache...`);
@@ -140,4 +156,29 @@ export function clearPathCache() {
   cachedWalkpaths = null;
   cachedDrivepaths = null;
   console.log('[OFFLINE] Path cache cleared');
+}
+
+export async function deleteCacheStorageEntry(url: string): Promise<void> {
+  if (window.caches) {
+    try {
+      const cache = await window.caches.open(DATA_CACHE_NAME);
+      const deleted = await cache.delete(url);
+      if (deleted) {
+        console.log(`[OFFLINE] Deleted CacheStorage entry for ${url}`);
+      } else {
+        console.log(`[OFFLINE] No CacheStorage entry found for ${url}`);
+      }
+    } catch (error) {
+      console.error(`[OFFLINE] Failed to delete CacheStorage entry for ${url}:`, error);
+    }
+  }
+}
+
+export async function invalidatePathCaches(): Promise<void> {
+  clearPathCache();
+  await Promise.all([
+    deleteCacheStorageEntry('/api/walkpaths'),
+    deleteCacheStorageEntry('/api/drivepaths')
+  ]);
+  console.log('[OFFLINE] All path caches invalidated');
 }

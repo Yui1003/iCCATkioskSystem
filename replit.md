@@ -44,6 +44,12 @@ Preferred communication style: Simple, everyday language.
 - **First-Boot Offline Support:** Kiosk works perfectly on first boot with zero network connectivity - all features render from embedded data.
 - **Service Worker Caching:** Cache-first strategy for API requests, resilient install process tolerates offline conditions, pre-caches critical endpoints when online.
 - **Browser Compatibility:** Uses `window.caches` API for proper browser main-thread compatibility.
+- **Cache Invalidation Strategy (Three-Layer):** Admin mutations clear all cache layers to ensure immediate updates in navigation:
+  1. **In-Memory Cache:** `cachedDrivepaths`/`cachedWalkpaths` set to null
+  2. **React Query Cache:** `invalidateQueries` for `/api/walkpaths` and `/api/drivepaths`
+  3. **Service Worker CacheStorage:** Delete cached entries for path endpoints
+  - All invalidation steps are awaited to prevent race conditions before UI updates
+  - `fetchWithCacheFallback` and `offlineFirstQueryFn` update CacheStorage with fresh data on successful network fetches
 
 ## External Dependencies
 

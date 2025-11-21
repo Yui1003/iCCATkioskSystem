@@ -34,7 +34,23 @@ const offlineFirstQueryFn: QueryFunction = async ({ queryKey }) => {
   try {
     const res = await fetch(url, { credentials: "include" });
     if (res.ok) {
-      return await res.json();
+      const data = await res.json();
+      
+      // Update CacheStorage with fresh data when network fetch succeeds
+      if (window.caches) {
+        try {
+          const cache = await window.caches.open(DATA_CACHE_NAME);
+          const responseToCache = new Response(JSON.stringify(data), {
+            headers: { 'Content-Type': 'application/json' }
+          });
+          await cache.put(url, responseToCache);
+          console.log(`[OFFLINE-QUERY] Updated CacheStorage for ${url}`);
+        } catch (cacheError) {
+          console.error(`[OFFLINE-QUERY] Failed to update CacheStorage for ${url}:`, cacheError);
+        }
+      }
+      
+      return data;
     }
   } catch (fetchError) {
     console.log(`[OFFLINE-QUERY] Fetch failed for ${url} (offline or network error), trying cache...`);
