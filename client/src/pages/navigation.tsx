@@ -1087,7 +1087,7 @@ export default function Navigation() {
       />
 
       <Dialog open={showVehicleSelector} onOpenChange={setShowVehicleSelector}>
-        <DialogContent className="sm:max-w-md z-[200]" data-testid="dialog-vehicle-selector">
+        <DialogContent className="sm:max-w-md z-[9999]" data-testid="dialog-vehicle-selector">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Car className="w-5 h-5" />

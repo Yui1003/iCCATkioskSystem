@@ -256,7 +256,7 @@ export default function CampusMap({
     routeMarkersRef.current = [];
 
     if (routePolyline && routePolyline.length > 0) {
-      const color = routeMode === 'driving' ? '#22c55e' : '#3b82f6';
+      const color = routeMode === 'driving' ? '#3b82f6' : '#22c55e';
       
       routeLayerRef.current = L.polyline(routePolyline, {
         color: color,
