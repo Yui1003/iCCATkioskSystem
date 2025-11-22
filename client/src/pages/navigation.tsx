@@ -843,7 +843,7 @@ export default function Navigation() {
                     className="border-0 bg-transparent h-auto p-0 focus-visible:ring-0"
                   />
                 </div>
-                <div className="border border-input rounded-md bg-background max-h-48 overflow-y-auto">
+                <div className="border border-input rounded-md bg-background max-h-48 overflow-y-auto space-y-0">
                   {(startSearchQuery === '' ? 
                     [{ id: 'kiosk', name: KIOSK_LOCATION.name, isKiosk: true } as any].concat(buildings) :
                     [{ id: 'kiosk', name: KIOSK_LOCATION.name, isKiosk: true } as any]
@@ -856,7 +856,7 @@ export default function Navigation() {
                         .concat(buildings)
                         .filter(loc => loc.name.toLowerCase().includes(startSearchQuery.toLowerCase()))
                     ).map(loc => (
-                      <button
+                      <div
                         key={loc.id}
                         onClick={() => {
                           if (loc.isKiosk) {
@@ -866,10 +866,22 @@ export default function Navigation() {
                           }
                           setStartSearchQuery("");
                         }}
-                        className={`w-full text-left px-3 py-2 hover-elevate border-b last:border-b-0 transition-colors ${
+                        role="button"
+                        tabIndex={0}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            if (loc.isKiosk) {
+                              setSelectedStart(KIOSK_LOCATION as any);
+                            } else {
+                              setSelectedStart(loc);
+                            }
+                            setStartSearchQuery("");
+                          }
+                        }}
+                        className={`w-full text-left px-3 py-2.5 border-b last:border-b-0 transition-all cursor-pointer ${
                           selectedStart?.id === loc.id
-                            ? "bg-primary/10 text-foreground"
-                            : "hover:bg-muted text-foreground"
+                            ? "bg-primary/15 text-foreground"
+                            : "bg-background hover:bg-muted/60 text-foreground"
                         }`}
                         data-testid={`button-start-${loc.id}`}
                       >
@@ -877,7 +889,7 @@ export default function Navigation() {
                           <MapPin className="w-4 h-4 text-primary flex-shrink-0" />
                           <span className="text-sm font-medium">{loc.name}</span>
                         </div>
-                      </button>
+                      </div>
                     ))
                   ) : (
                     <div className="px-3 py-4 text-sm text-muted-foreground text-center">

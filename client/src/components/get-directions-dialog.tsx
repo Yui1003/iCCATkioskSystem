@@ -104,19 +104,27 @@ export default function GetDirectionsDialog({
                   className="border-0 bg-transparent h-auto p-0 focus-visible:ring-0"
                 />
               </div>
-              <div className="border border-input rounded-md bg-background max-h-48 overflow-y-auto">
+              <div className="border border-input rounded-md bg-background max-h-48 overflow-y-auto space-y-0">
                 {filteredStartLocations.length > 0 ? (
                   filteredStartLocations.map((loc) => (
-                    <button
+                    <div
                       key={loc.id}
                       onClick={() => {
                         setSelectedStart(loc.id);
                         setStartSearchQuery("");
                       }}
-                      className={`w-full text-left px-3 py-2 hover-elevate border-b last:border-b-0 transition-colors ${
+                      role="button"
+                      tabIndex={0}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          setSelectedStart(loc.id);
+                          setStartSearchQuery("");
+                        }
+                      }}
+                      className={`w-full text-left px-3 py-2.5 border-b last:border-b-0 transition-all cursor-pointer ${
                         selectedStart === loc.id
-                          ? "bg-primary/10 text-foreground"
-                          : "hover:bg-muted text-foreground"
+                          ? "bg-primary/15 text-foreground"
+                          : "bg-background hover:bg-muted/60 text-foreground"
                       }`}
                       data-testid={`button-dialog-start-${loc.id}`}
                     >
@@ -124,7 +132,7 @@ export default function GetDirectionsDialog({
                         <MapPin className="w-4 h-4 text-primary flex-shrink-0" />
                         <span className="text-sm font-medium">{loc.name}</span>
                       </div>
-                    </button>
+                    </div>
                   ))
                 ) : (
                   <div className="px-3 py-4 text-sm text-muted-foreground text-center">
