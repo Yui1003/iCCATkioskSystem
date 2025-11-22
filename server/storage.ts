@@ -642,9 +642,31 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
+  async clearAllFeedback(): Promise<void> {
+    try {
+      const snapshot = await db.collection('feedbacks').get();
+      const batch = db.batch();
+      snapshot.docs.forEach(doc => {
+        batch.delete(doc.ref);
+      });
+      await batch.commit();
+      console.log(`Cleared ${snapshot.docs.length} feedback records`);
+    } catch (error) {
+      console.error('Firestore error:', error);
+      throw new Error('Cannot clear feedback');
+    }
+  }
+
   async createFeedback(insertFeedback: InsertFeedback): Promise<Feedback> {
     try {
       const id = randomUUID();
+      
+      // Auto-generate sequential user number
+      const allFeedbacks = await this.getFeedbacks();
+      const maxUserId = allFeedbacks.length > 0
+        ? Math.max(...allFeedbacks.map(f => f.userId))
+        : 0;
+      const userId = maxUserId + 1;
       
       // Calculate category averages
       const avgFunctionalSuitability = (
@@ -711,6 +733,7 @@ export class DatabaseStorage implements IStorage {
       
       const feedback: Feedback = {
         id,
+        userId,
         ...insertFeedback,
         comments: insertFeedback.comments ?? null,
         timestamp: new Date(),

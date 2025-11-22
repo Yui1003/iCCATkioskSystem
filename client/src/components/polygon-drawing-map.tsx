@@ -1,6 +1,4 @@
 import { useEffect, useRef } from "react";
-import 'leaflet/dist/leaflet.css';
-import 'leaflet-draw/dist/leaflet.draw.css';
 
 interface LatLng {
   lat: number;
@@ -57,7 +55,7 @@ export default function PolygonDrawingMap({
     }).addTo(map);
 
     const drawnItems = new L.FeatureGroup();
-    map.addTo(drawnItems);
+    drawnItems.addTo(map);
 
     const drawControl = new L.Control.Draw({
       position: 'topright',

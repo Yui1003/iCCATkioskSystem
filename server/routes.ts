@@ -154,6 +154,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.delete('/api/feedback/clear-all', async (req, res) => {
+    // Security: Only allow from localhost/admin (testing environment only)
+    const isLocalhost = req.hostname === 'localhost' || req.hostname === '127.0.0.1' || req.ip === '127.0.0.1' || req.ip === '::1';
+    
+    if (!isLocalhost) {
+      return res.status(403).json({ error: 'This operation is only allowed from localhost for testing purposes' });
+    }
+    
+    try {
+      await storage.clearAllFeedback();
+      res.json({ success: true, message: 'All feedback records have been deleted' });
+    } catch (error: any) {
+      console.error('Failed to clear feedback:', error);
+      res.status(500).json({ error: 'Failed to clear all feedback' });
+    }
+  });
+
   app.get('/api/feedback/export', async (req, res) => {
     try {
       const XLSX = await import('xlsx');
@@ -645,7 +662,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           description: null,
           departments: null,
           image: null,
-          markerIcon: null
+          markerIcon: null,
+          polygon: null
         };
       } else {
         startBuilding = await storage.getBuilding(startId);

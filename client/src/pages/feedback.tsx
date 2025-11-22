@@ -72,7 +72,7 @@ export default function FeedbackPage() {
   const [, navigate] = useLocation();
   const { toast } = useToast();
   const [showBackDialog, setShowBackDialog] = useState(false);
-  const [userId, setUserId] = useState("");
+  const [submittedUserId, setSubmittedUserId] = useState<number | null>(null);
   const [comments, setComments] = useState("");
   const [ratings, setRatings] = useState<FeedbackRatings>({
     functionalCompleteness: null,
@@ -125,12 +125,13 @@ export default function FeedbackPage() {
     mutationFn: async (data: any) => {
       return await apiRequest("POST", "/api/feedback", data);
     },
-    onSuccess: () => {
+    onSuccess: (data: any) => {
+      setSubmittedUserId(data.userId);
       toast({
         title: "Thank you!",
-        description: "Your feedback has been submitted successfully.",
+        description: `Your feedback has been submitted successfully. Your User # is: ${data.userId}`,
       });
-      setTimeout(() => navigate("/"), 2000);
+      setTimeout(() => navigate("/"), 3000);
     },
     onError: () => {
       toast({
@@ -169,19 +170,9 @@ export default function FeedbackPage() {
       return;
     }
 
-    if (!userId.trim()) {
-      toast({
-        title: "User # Required",
-        description: "Please enter your User # before submitting.",
-        variant: "destructive",
-      });
-      return;
-    }
-
     const averages = calculateAverages(ratings as Required<FeedbackRatings>);
 
     submitMutation.mutate({
-      userId: userId.trim(),
       comments: comments.trim() || null,
       ...ratings,
       ...averages,
@@ -470,25 +461,16 @@ export default function FeedbackPage() {
             </CardContent>
           </Card>
 
-          {/* User Information */}
+          {/* Additional Information */}
           <Card>
             <CardHeader>
-              <CardTitle>Your Information</CardTitle>
+              <CardTitle>Additional Comments (Optional)</CardTitle>
+              <CardDescription>
+                Share any additional thoughts or suggestions. A User # will be assigned automatically when you submit.
+              </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="userId">User # <span className="text-destructive">*</span></Label>
-                <Input
-                  id="userId"
-                  data-testid="input-user-id"
-                  placeholder="Enter your User # (e.g., User 1, Student 123)"
-                  value={userId}
-                  onChange={(e) => setUserId(e.target.value)}
-                  disabled={submitMutation.isPending}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="comments">Comments (Optional)</Label>
                 <Textarea
                   id="comments"
                   data-testid="textarea-comments"

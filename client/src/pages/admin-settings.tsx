@@ -3,7 +3,7 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Settings, Loader2, Power, Download } from "lucide-react";
+import { Settings, Loader2, Power, Download, Trash2 } from "lucide-react";
 import AdminLayout from "@/components/admin-layout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -58,6 +58,7 @@ type SettingsFormValues = z.infer<typeof settingsFormSchema>;
 export default function AdminSettings() {
   const { toast } = useToast();
   const [showShutdownDialog, setShowShutdownDialog] = useState(false);
+  const [showClearFeedbackDialog, setShowClearFeedbackDialog] = useState(false);
 
   const form = useForm<SettingsFormValues>({
     resolver: zodResolver(settingsFormSchema),
@@ -199,6 +200,41 @@ export default function AdminSettings() {
     shutdownMutation.mutate();
   };
 
+  // Clear all feedback mutation (TESTING ONLY)
+  const clearFeedbackMutation = useMutation({
+    mutationFn: async () => {
+      const response = await fetch('/api/feedback/clear-all', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' }
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to clear feedback');
+      }
+      
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Feedback Cleared",
+        description: "All feedback records have been permanently deleted.",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Clear Failed",
+        description: error.message || "Failed to clear feedback. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleClearFeedback = () => {
+    setShowClearFeedbackDialog(false);
+    clearFeedbackMutation.mutate();
+  };
+
   return (
     <AdminLayout>
       <div className="p-8">
@@ -313,15 +349,30 @@ export default function AdminSettings() {
               <p className="text-sm text-muted-foreground mb-4">
                 Export all submitted feedback responses with calculated category averages to an Excel spreadsheet.
               </p>
-              <Button
-                variant="default"
-                onClick={() => window.location.href = '/api/feedback/export'}
-                data-testid="button-download-feedback"
-                className="gap-2"
-              >
-                <Download className="w-4 h-4" />
-                Download Feedback Excel
-              </Button>
+              <div className="flex flex-wrap gap-3">
+                <Button
+                  variant="default"
+                  onClick={() => window.location.href = '/api/feedback/export'}
+                  data-testid="button-download-feedback"
+                  className="gap-2"
+                >
+                  <Download className="w-4 h-4" />
+                  Download Feedback Excel
+                </Button>
+                <Button
+                  variant="destructive"
+                  onClick={() => setShowClearFeedbackDialog(true)}
+                  disabled={clearFeedbackMutation.isPending}
+                  data-testid="button-clear-all-feedback"
+                  className="gap-2"
+                >
+                  {clearFeedbackMutation.isPending && (
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  )}
+                  <Trash2 className="w-4 h-4" />
+                  Clear All Feedback (TESTING ONLY)
+                </Button>
+              </div>
             </CardContent>
           </Card>
 
@@ -389,6 +440,49 @@ export default function AdminSettings() {
             >
               <Power className="w-4 h-4 mr-2" />
               Shutdown Now
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={showClearFeedbackDialog} onOpenChange={setShowClearFeedbackDialog}>
+        <AlertDialogContent data-testid="dialog-clear-feedback-confirm" className="z-[9999] [&~div]:z-[9990]">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2 text-destructive">
+              <Trash2 className="w-5 h-5" />
+              Clear All Feedback - TESTING ONLY
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              <strong className="text-destructive">⚠️ DANGER: This action is PERMANENT and IRREVERSIBLE!</strong>
+              <br />
+              <br />
+              Are you absolutely sure you want to delete ALL feedback records?
+              <br />
+              <br />
+              This will:
+              <ul className="list-disc list-inside mt-2 space-y-1">
+                <li>Permanently delete all user feedback submissions</li>
+                <li>Remove all ratings and comments from the database</li>
+                <li>Reset the user number counter to zero</li>
+                <li>Cannot be undone - data will be lost forever</li>
+              </ul>
+              <br />
+              <strong className="text-destructive">
+                This feature is for TESTING purposes only and should NEVER be used in production!
+              </strong>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel data-testid="button-cancel-clear-feedback">
+              Cancel (Keep Feedback)
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleClearFeedback}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              data-testid="button-confirm-clear-feedback"
+            >
+              <Trash2 className="w-4 h-4 mr-2" />
+              Yes, Permanently Delete All Feedback
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

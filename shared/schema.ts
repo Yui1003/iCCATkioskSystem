@@ -337,6 +337,7 @@ export const feedbacks = pgTable("feedbacks", {
 
 export const insertFeedbackSchema = createInsertSchema(feedbacks).omit({ 
   id: true, 
+  userId: true, // Auto-generated sequentially on submission
   timestamp: true,
   avgFunctionalSuitability: true,
   avgPerformanceEfficiency: true,
