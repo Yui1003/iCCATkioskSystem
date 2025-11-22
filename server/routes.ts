@@ -1,5 +1,6 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
+import { exec } from "child_process";
 import { storage } from "./storage";
 import {
   insertBuildingSchema,
@@ -38,6 +39,60 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ success: true, username: admin.username });
     } catch (error) {
       res.status(400).json({ error: 'Invalid request' });
+    }
+  });
+
+  // Shutdown kiosk endpoint
+  app.post('/api/admin/shutdown', async (req, res) => {
+    try {
+      // Security: Only allow shutdown requests from localhost
+      const clientIP = req.ip || req.socket.remoteAddress || '';
+      const isLocalhost = clientIP === '127.0.0.1' || 
+                         clientIP === '::1' || 
+                         clientIP === '::ffff:127.0.0.1' ||
+                         clientIP === 'localhost';
+      
+      if (!isLocalhost) {
+        console.warn('[SHUTDOWN] Unauthorized shutdown attempt from:', clientIP);
+        return res.status(403).json({ 
+          error: 'Forbidden',
+          message: 'Shutdown can only be initiated from localhost'
+        });
+      }
+      
+      console.log('[SHUTDOWN] Shutdown request received from localhost');
+      
+      // Execute Windows shutdown command
+      // shutdown /s /t 0
+      // /s = shutdown
+      // /t 0 = timeout of 0 seconds (immediate)
+      exec('shutdown /s /t 0', (error, stdout, stderr) => {
+        if (error) {
+          console.error('[SHUTDOWN] Error executing shutdown command:', error);
+          console.error('[SHUTDOWN] This may indicate insufficient permissions. The Node.js process may need administrator privileges.');
+          // Don't return error response as system might be shutting down
+        }
+        if (stderr) {
+          console.error('[SHUTDOWN] Shutdown stderr:', stderr);
+        }
+        if (stdout) {
+          console.log('[SHUTDOWN] Shutdown stdout:', stdout);
+        }
+      });
+      
+      // Send immediate response before shutdown completes
+      res.json({ 
+        success: true, 
+        message: 'System shutdown initiated' 
+      });
+      
+      console.log('[SHUTDOWN] Shutdown command executed successfully');
+    } catch (error) {
+      console.error('[SHUTDOWN] Failed to initiate shutdown:', error);
+      res.status(500).json({ 
+        error: 'Failed to initiate system shutdown',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      });
     }
   });
 
