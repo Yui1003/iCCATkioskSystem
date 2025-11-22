@@ -176,10 +176,10 @@ export default function CampusMap({
     const map = mapInstanceRef.current;
 
     // Define campus boundary (CCAT Campus, Cavite State University)
-    // Calculated from actual campus buildings extent
+    // Expanded to allow more panning when zoomed in while keeping campus focused
     const campusBounds = L.latLngBounds(
-      L.latLng(14.4002, 120.8650),  // Southwest corner
-      L.latLng(14.4047, 120.8695)   // Northeast corner
+      L.latLng(14.3970, 120.8610),  // Southwest corner - expanded
+      L.latLng(14.4080, 120.8740)   // Northeast corner - expanded
     );
 
     // Set max bounds - prevents panning/zooming outside this area
