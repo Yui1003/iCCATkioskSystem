@@ -253,6 +253,17 @@ export interface RouteStep {
   icon: string;
 }
 
+export type VehicleType = 'car' | 'motorcycle' | 'bike';
+
+export interface RoutePhase {
+  mode: 'walking' | 'driving';
+  polyline: LatLng[];
+  steps: RouteStep[];
+  distance: string;
+  startName: string;
+  endName: string;
+}
+
 export interface NavigationRoute {
   start: Building;
   end: Building;
@@ -260,4 +271,7 @@ export interface NavigationRoute {
   polyline: LatLng[];
   steps: RouteStep[];
   totalDistance: string;
+  vehicleType?: VehicleType;
+  parkingLocation?: Building;
+  phases?: RoutePhase[];
 }

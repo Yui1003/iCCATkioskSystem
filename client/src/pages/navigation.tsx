@@ -1,17 +1,19 @@
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, Navigation as NavigationIcon, TrendingUp, MapPin, Filter, Search, Users } from "lucide-react";
+import { ArrowLeft, Navigation as NavigationIcon, TrendingUp, MapPin, Filter, Search, Users, Car, Bike } from "lucide-react";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { useToast } from "@/hooks/use-toast";
 import CampusMap from "@/components/campus-map";
 import BuildingInfoModal from "@/components/building-info-modal";
 import FloorPlanViewer from "@/components/floor-plan-viewer";
 import GetDirectionsDialog from "@/components/get-directions-dialog";
-import type { Building, NavigationRoute, Staff, Floor, Room } from "@shared/schema";
+import type { Building, NavigationRoute, Staff, Floor, Room, VehicleType } from "@shared/schema";
 import { poiTypes, KIOSK_LOCATION } from "@shared/schema";
 import { useGlobalInactivity } from "@/hooks/use-inactivity";
 import { findShortestPath } from "@/lib/pathfinding";
@@ -20,9 +22,13 @@ import { getWalkpaths, getDrivepaths, getBuildings, getStaff, getFloors, getRoom
 export default function Navigation() {
   // Return to home after 3 minutes of inactivity
   useGlobalInactivity();
+  const { toast } = useToast();
   const [selectedStart, setSelectedStart] = useState<Building | null | typeof KIOSK_LOCATION>(null);
   const [selectedEnd, setSelectedEnd] = useState<Building | null>(null);
   const [mode, setMode] = useState<'walking' | 'driving'>('walking');
+  const [vehicleType, setVehicleType] = useState<VehicleType | null>(null);
+  const [showVehicleSelector, setShowVehicleSelector] = useState(false);
+  const [pendingNavigationData, setPendingNavigationData] = useState<{start: any, end: Building, mode: 'walking' | 'driving'} | null>(null);
   const [route, setRoute] = useState<NavigationRoute | null>(null);
   const [selectedBuilding, setSelectedBuilding] = useState<Building | null>(null);
   const [selectedFloor, setSelectedFloor] = useState<Floor | null>(null);
@@ -123,6 +129,38 @@ export default function Navigation() {
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
 
     return R * c;
+  };
+
+  const capitalizeVehicleType = (type: VehicleType): string => {
+    const labels: Record<VehicleType, string> = {
+      'car': 'Car',
+      'motorcycle': 'Motorcycle',
+      'bike': 'Bike'
+    };
+    return labels[type];
+  };
+
+  const findNearestParkingByType = (destination: Building, vehicleType: VehicleType): Building | null => {
+    const parkingType = vehicleType === 'car' ? 'Car Parking' : vehicleType === 'motorcycle' ? 'Motorcycle Parking' : 'Bike Parking';
+    
+    const parkingAreas = buildings.filter(b => b.type === parkingType);
+    
+    if (parkingAreas.length === 0) {
+      return null;
+    }
+
+    let nearestParking = parkingAreas[0];
+    let minDistance = calculateDistance(destination.lat, destination.lng, parkingAreas[0].lat, parkingAreas[0].lng);
+
+    for (let i = 1; i < parkingAreas.length; i++) {
+      const dist = calculateDistance(destination.lat, destination.lng, parkingAreas[i].lat, parkingAreas[i].lng);
+      if (dist < minDistance) {
+        minDistance = dist;
+        nearestParking = parkingAreas[i];
+      }
+    }
+
+    return nearestParking;
   };
 
   const calculateBearing = (lat1: number, lng1: number, lat2: number, lng2: number): number => {
@@ -273,10 +311,198 @@ export default function Navigation() {
     }
   };
 
+  const generateTwoPhaseRoute = async (
+    start: Building | typeof KIOSK_LOCATION,
+    end: Building,
+    vehicleType: VehicleType
+  ): Promise<NavigationRoute | null> => {
+    try {
+      // Find nearest parking to destination
+      const parkingLocation = findNearestParkingByType(end, vehicleType);
+      
+      if (!parkingLocation) {
+        toast({
+          title: "No Parking Available",
+          description: `No ${capitalizeVehicleType(vehicleType)} parking found near ${end.name}. Please try a different vehicle type.`,
+          variant: "destructive"
+        });
+        return null;
+      }
+
+      // Check if parking is too far (>500m)
+      const parkingDistance = calculateDistance(end.lat, end.lng, parkingLocation.lat, parkingLocation.lng);
+      if (parkingDistance > 500) {
+        toast({
+          title: "Parking Distance Warning",
+          description: `Nearest ${capitalizeVehicleType(vehicleType)} parking is ${Math.round(parkingDistance)}m from your destination. This may require a longer walk.`,
+          variant: "default"
+        });
+      }
+
+      // Phase 1: Driving/Riding to parking
+      const pathType = vehicleType === 'bike' ? 'walking' : 'driving';
+      const drivingPolyline = await calculateRouteClientSide(start, parkingLocation, pathType);
+      
+      if (!drivingPolyline) {
+        toast({
+          title: "Route Calculation Failed",
+          description: `Unable to calculate ${pathType} route to ${parkingLocation.name}. Please try a different destination.`,
+          variant: "destructive"
+        });
+        return null;
+      }
+
+      const drivingPhase = generateSmartSteps(
+        drivingPolyline,
+        pathType,
+        start.name,
+        parkingLocation.name
+      );
+
+      // Phase 2: Walking from parking to destination
+      const walkingPolyline = await calculateRouteClientSide(parkingLocation, end, 'walking');
+      
+      if (!walkingPolyline) {
+        toast({
+          title: "Route Calculation Failed",
+          description: `Unable to calculate walking route from ${parkingLocation.name} to ${end.name}. Please try a different destination.`,
+          variant: "destructive"
+        });
+        return null;
+      }
+
+      const walkingPhase = generateSmartSteps(
+        walkingPolyline,
+        'walking',
+        parkingLocation.name,
+        end.name
+      );
+
+      // Combine both polylines for map display
+      const combinedPolyline = [...drivingPolyline, ...walkingPolyline];
+
+      // Combine both phases' steps for fallback display
+      const combinedSteps = [...drivingPhase.steps, ...walkingPhase.steps];
+
+      // Calculate total distance
+      const drivingDist = parseInt(drivingPhase.totalDistance.replace(' m', ''));
+      const walkingDist = parseInt(walkingPhase.totalDistance.replace(' m', ''));
+      const totalDist = drivingDist + walkingDist;
+
+      // Show success message with parking info
+      toast({
+        title: "Route Calculated",
+        description: `You'll park at ${parkingLocation.name} and walk ${walkingPhase.totalDistance} to ${end.name}`,
+        variant: "default"
+      });
+
+      return {
+        start,
+        end,
+        mode: 'driving',
+        vehicleType,
+        parkingLocation,
+        polyline: combinedPolyline,
+        steps: combinedSteps,
+        totalDistance: `${totalDist} m`,
+        phases: [
+          {
+            mode: pathType,
+            polyline: drivingPolyline,
+            steps: drivingPhase.steps,
+            distance: drivingPhase.totalDistance,
+            startName: start.name,
+            endName: parkingLocation.name
+          },
+          {
+            mode: 'walking',
+            polyline: walkingPolyline,
+            steps: walkingPhase.steps,
+            distance: walkingPhase.totalDistance,
+            startName: parkingLocation.name,
+            endName: end.name
+          }
+        ]
+      };
+    } catch (error) {
+      console.error('Error generating two-phase route:', error);
+      toast({
+        title: "Navigation Error",
+        description: "An unexpected error occurred while calculating your route. Please try again.",
+        variant: "destructive"
+      });
+      return null;
+    }
+  };
+
   const generateRoute = async () => {
     if (!selectedStart || !selectedEnd) return;
 
+    // If driving mode and no vehicle type selected, show vehicle selector
+    if (mode === 'driving' && !vehicleType) {
+      setPendingNavigationData({ start: selectedStart, end: selectedEnd, mode });
+      setShowVehicleSelector(true);
+      return;
+    }
+
     try {
+      // For driving with vehicle type, try two-phase routing first
+      if (mode === 'driving' && vehicleType) {
+        const twoPhaseRoute = await generateTwoPhaseRoute(selectedStart, selectedEnd, vehicleType);
+        if (twoPhaseRoute) {
+          setRoute(twoPhaseRoute);
+          return;
+        }
+        // If two-phase routing fails, fall back appropriately
+        // Bikes should fall back to walking, cars/motorcycles to direct driving
+        const fallbackMode = vehicleType === 'bike' ? 'walking' : 'driving';
+        
+        // Update mode state to match fallback and clear vehicle type
+        setMode(fallbackMode);
+        if (vehicleType === 'bike') {
+          setVehicleType(null);
+        }
+        
+        toast({
+          title: "Using Direct Route",
+          description: `Parking navigation unavailable. Showing direct ${fallbackMode} route instead.`,
+          variant: "default"
+        });
+        
+        const routePolyline = await calculateRouteClientSide(
+          selectedStart,
+          selectedEnd,
+          fallbackMode
+        );
+        
+        if (!routePolyline) {
+          toast({
+            title: "Route Not Found",
+            description: `Unable to calculate ${fallbackMode} route. Please try a different destination.`,
+            variant: "destructive"
+          });
+          return;
+        }
+
+        const { steps, totalDistance } = generateSmartSteps(
+          routePolyline,
+          fallbackMode,
+          selectedStart.name,
+          selectedEnd.name
+        );
+
+        setRoute({
+          start: selectedStart,
+          end: selectedEnd,
+          mode: fallbackMode,
+          polyline: routePolyline,
+          steps,
+          totalDistance
+        });
+        return;
+      }
+
+      // For walking, use regular routing
       const routePolyline = await calculateRouteClientSide(
         selectedStart,
         selectedEnd,
@@ -284,7 +510,11 @@ export default function Navigation() {
       );
 
       if (!routePolyline) {
-        console.error('Failed to calculate route');
+        toast({
+          title: "Route Not Found",
+          description: `Unable to calculate ${mode} route. Please try a different destination.`,
+          variant: "destructive"
+        });
         return;
       }
 
@@ -305,6 +535,73 @@ export default function Navigation() {
       });
     } catch (error) {
       console.error('Error generating route:', error);
+      toast({
+        title: "Navigation Error",
+        description: "An unexpected error occurred. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleVehicleSelection = async (selectedVehicle: VehicleType) => {
+    setVehicleType(selectedVehicle);
+    setShowVehicleSelector(false);
+
+    if (pendingNavigationData) {
+      const { start, end, mode } = pendingNavigationData;
+      
+      // Try two-phase route with selected vehicle
+      const twoPhaseRoute = await generateTwoPhaseRoute(start, end, selectedVehicle);
+      if (twoPhaseRoute) {
+        setRoute(twoPhaseRoute);
+        setSelectedStart(start);
+        setSelectedEnd(end);
+        setMode(mode);
+        setPendingNavigationData(null);
+        return;
+      }
+      
+      // Fall back appropriately - bikes to walking, cars/motorcycles to driving
+      const fallbackMode = selectedVehicle === 'bike' ? 'walking' : 'driving';
+      toast({
+        title: "Using Direct Route",
+        description: `Parking navigation unavailable. Showing direct ${fallbackMode} route instead.`,
+        variant: "default"
+      });
+      
+      try {
+        const routePolyline = await calculateRouteClientSide(start, end, fallbackMode);
+        
+        if (routePolyline) {
+          const { steps, totalDistance } = generateSmartSteps(
+            routePolyline,
+            fallbackMode,
+            start.name,
+            end.name
+          );
+          
+          setRoute({
+            start,
+            end,
+            mode: fallbackMode,
+            polyline: routePolyline,
+            steps,
+            totalDistance
+          });
+          setSelectedStart(start);
+          setSelectedEnd(end);
+          setMode(fallbackMode);
+        }
+      } catch (error) {
+        console.error('Error generating fallback route:', error);
+        toast({
+          title: "Navigation Error",
+          description: "Unable to calculate route. Please try again.",
+          variant: "destructive"
+        });
+      }
+      
+      setPendingNavigationData(null);
     }
   };
 
@@ -312,6 +609,8 @@ export default function Navigation() {
     setSelectedStart(null);
     setSelectedEnd(null);
     setRoute(null);
+    setVehicleType(null);
+    setPendingNavigationData(null);
   };
 
   const handleGetDirections = () => {
@@ -321,7 +620,7 @@ export default function Navigation() {
     }
   };
 
-  const handleNavigateFromDialog = async (startId: string, travelMode: 'walking' | 'driving') => {
+  const handleNavigateFromDialog = async (startId: string, travelMode: 'walking' | 'driving', selectedVehicle?: VehicleType) => {
     if (!directionsDestination) return;
 
     // Handle kiosk location or regular building
@@ -339,6 +638,21 @@ export default function Navigation() {
     // Close modals
     setShowDirectionsDialog(false);
     setSelectedBuilding(null);
+
+    // For driving mode with vehicle type, use two-phase routing
+    if (travelMode === 'driving' && selectedVehicle) {
+      setVehicleType(selectedVehicle);
+      
+      try {
+        const twoPhaseRoute = await generateTwoPhaseRoute(start, directionsDestination, selectedVehicle);
+        if (twoPhaseRoute) {
+          setRoute(twoPhaseRoute);
+        }
+      } catch (error) {
+        console.error('Error generating two-phase route:', error);
+      }
+      return;
+    }
 
     // Generate the route
     try {
@@ -600,28 +914,79 @@ export default function Navigation() {
                   <span className="font-medium text-foreground">{route.totalDistance}</span>
                   <span className="text-muted-foreground">•</span>
                   <span className="text-muted-foreground capitalize">{route.mode}</span>
+                  {route.vehicleType && (
+                    <>
+                      <span className="text-muted-foreground">•</span>
+                      <span className="text-muted-foreground capitalize">{route.vehicleType}</span>
+                    </>
+                  )}
                 </div>
+                {route.parkingLocation && (
+                  <div className="mt-3 pt-3 border-t border-border">
+                    <p className="text-xs text-muted-foreground">Parking at</p>
+                    <p className="font-medium text-foreground">{route.parkingLocation.name}</p>
+                  </div>
+                )}
               </Card>
 
               <div>
-                <h4 className="text-sm font-medium text-foreground mb-3">Directions</h4>
-                <div className="space-y-3">
-                  {route.steps.map((step, index) => (
-                    <div
-                      key={index}
-                      className="flex gap-3"
-                      data-testid={`route-step-${index}`}
-                    >
-                      <div className="flex-shrink-0 w-8 h-8 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-sm font-medium">
-                        {index + 1}
+                {route.phases && route.phases.length > 0 ? (
+                  <>
+                    {route.phases.map((phase, phaseIndex) => (
+                      <div key={phaseIndex} className="mb-6">
+                        <div className="flex items-center gap-2 mb-3">
+                          <div className="flex-shrink-0 w-6 h-6 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-xs font-bold">
+                            {phaseIndex + 1}
+                          </div>
+                          <h4 className="text-sm font-semibold text-foreground">
+                            {phaseIndex === 0 
+                              ? `${route.vehicleType === 'bike' ? 'Ride' : 'Drive'} to ${phase.endName}`
+                              : `Walk to ${phase.endName}`}
+                          </h4>
+                          <span className="text-xs text-muted-foreground ml-auto">{phase.distance}</span>
+                        </div>
+                        <div className="space-y-3 pl-8">
+                          {phase.steps.map((step, stepIndex) => (
+                            <div
+                              key={stepIndex}
+                              className="flex gap-3"
+                              data-testid={`route-phase-${phaseIndex}-step-${stepIndex}`}
+                            >
+                              <div className="flex-shrink-0 w-6 h-6 bg-card border border-border rounded-full flex items-center justify-center text-xs font-medium text-muted-foreground">
+                                {stepIndex + 1}
+                              </div>
+                              <div className="flex-1">
+                                <p className="text-sm font-medium text-foreground">{step.instruction}</p>
+                                <p className="text-xs text-muted-foreground">{step.distance}</p>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
                       </div>
-                      <div className="flex-1">
-                        <p className="text-sm font-medium text-foreground">{step.instruction}</p>
-                        <p className="text-xs text-muted-foreground">{step.distance}</p>
-                      </div>
+                    ))}
+                  </>
+                ) : (
+                  <>
+                    <h4 className="text-sm font-medium text-foreground mb-3">Directions</h4>
+                    <div className="space-y-3">
+                      {route.steps.map((step, index) => (
+                        <div
+                          key={index}
+                          className="flex gap-3"
+                          data-testid={`route-step-${index}`}
+                        >
+                          <div className="flex-shrink-0 w-8 h-8 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-sm font-medium">
+                            {index + 1}
+                          </div>
+                          <div className="flex-1">
+                            <p className="text-sm font-medium text-foreground">{step.instruction}</p>
+                            <p className="text-xs text-muted-foreground">{step.distance}</p>
+                          </div>
+                        </div>
+                      ))}
                     </div>
-                  ))}
-                </div>
+                  </>
+                )}
               </div>
             </div>
           )}
@@ -664,6 +1029,66 @@ export default function Navigation() {
         onClose={() => setShowDirectionsDialog(false)}
         onNavigate={handleNavigateFromDialog}
       />
+
+      <Dialog open={showVehicleSelector} onOpenChange={setShowVehicleSelector}>
+        <DialogContent className="sm:max-w-md z-[200]" data-testid="dialog-vehicle-selector">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Car className="w-5 h-5" />
+              Choose Your Vehicle
+            </DialogTitle>
+            <DialogDescription>
+              Select the vehicle you'll be using to reach your destination
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="grid grid-cols-3 gap-4 pt-4">
+            <Button
+              variant="outline"
+              className="h-28 flex flex-col gap-2 hover-elevate active-elevate-2"
+              onClick={() => handleVehicleSelection('car')}
+              data-testid="button-vehicle-car"
+            >
+              <Car className="w-8 h-8" />
+              <span className="font-semibold">Car</span>
+            </Button>
+
+            <Button
+              variant="outline"
+              className="h-28 flex flex-col gap-2 hover-elevate active-elevate-2"
+              onClick={() => handleVehicleSelection('motorcycle')}
+              data-testid="button-vehicle-motorcycle"
+            >
+              <Bike className="w-8 h-8" />
+              <span className="font-semibold">Motorcycle</span>
+            </Button>
+
+            <Button
+              variant="outline"
+              className="h-28 flex flex-col gap-2 hover-elevate active-elevate-2"
+              onClick={() => handleVehicleSelection('bike')}
+              data-testid="button-vehicle-bike"
+            >
+              <Bike className="w-8 h-8" />
+              <span className="font-semibold">Bike</span>
+            </Button>
+          </div>
+
+          <div className="flex gap-2 pt-2">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowVehicleSelector(false);
+                setPendingNavigationData(null);
+              }}
+              className="flex-1"
+              data-testid="button-vehicle-cancel"
+            >
+              Cancel
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
