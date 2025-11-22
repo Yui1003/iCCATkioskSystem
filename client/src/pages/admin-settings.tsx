@@ -446,7 +446,7 @@ export default function AdminSettings() {
       </AlertDialog>
 
       <AlertDialog open={showClearFeedbackDialog} onOpenChange={setShowClearFeedbackDialog}>
-        <AlertDialogContent data-testid="dialog-clear-feedback-confirm" className="z-[9999] [&~div]:z-[9990]">
+        <AlertDialogContent data-testid="dialog-clear-feedback-confirm">
           <AlertDialogHeader>
             <AlertDialogTitle className="flex items-center gap-2 text-destructive">
               <Trash2 className="w-5 h-5" />
