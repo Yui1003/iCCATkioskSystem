@@ -115,6 +115,7 @@ export default function CampusMap({
   const markersRef = useRef<any[]>([]);
   const routeLayerRef = useRef<any>(null);
   const routeMarkersRef = useRef<any[]>([]);
+  const polygonsRef = useRef<any[]>([]);
 
   useEffect(() => {
     if (!mapRef.current || mapInstanceRef.current) return;
@@ -384,6 +385,29 @@ export default function CampusMap({
       mapInstanceRef.current.setView([lat, lng], 17.5);
     }
   }, [routePolyline, routeMode, routePhases, centerLat, centerLng]);
+
+  useEffect(() => {
+    if (!mapInstanceRef.current || !window.L) return;
+
+    const L = window.L;
+
+    polygonsRef.current.forEach(polygon => polygon.remove());
+    polygonsRef.current = [];
+
+    buildings.forEach(building => {
+      if (building.polygon && Array.isArray(building.polygon) && building.polygon.length > 2) {
+        const latlngs = building.polygon.map((p: any) => [p.lat, p.lng]);
+        const polygon = L.polygon(latlngs, {
+          color: '#FACC15',
+          fillColor: '#FACC15',
+          fillOpacity: 0.3,
+          weight: 2
+        }).addTo(mapInstanceRef.current);
+
+        polygonsRef.current.push(polygon);
+      }
+    });
+  }, [buildings]);
 
   return <div ref={mapRef} className={className} data-testid="map-container" />;
 }

@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { Plus, Pencil, Trash2, MapPin, Building2, School, Hospital, Store, Home } from "lucide-react";
+import { Plus, Pencil, Trash2, MapPin, Building2, School, Hospital, Store, Home, Shapes } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -12,7 +12,8 @@ import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import AdminLayout from "@/components/admin-layout";
 import CampusMap from "@/components/campus-map";
-import type { Building, InsertBuilding } from "@shared/schema";
+import PolygonDrawingMap from "@/components/polygon-drawing-map";
+import type { Building, InsertBuilding, LatLng } from "@shared/schema";
 import { poiTypes, canHaveDepartments } from "@shared/schema";
 import { invalidateEndpointCache } from "@/lib/offline-data";
 
@@ -28,6 +29,7 @@ export default function AdminBuildings() {
     departments: [],
     image: "",
     markerIcon: "building",
+    polygon: null,
   });
   const [departmentInput, setDepartmentInput] = useState("");
   const [mapClickEnabled, setMapClickEnabled] = useState(false);
@@ -82,6 +84,7 @@ export default function AdminBuildings() {
         departments: building.departments || [],
         image: building.image || "",
         markerIcon: building.markerIcon || "building",
+        polygon: building.polygon || null,
       });
     } else {
       setEditingBuilding(null);
@@ -94,6 +97,7 @@ export default function AdminBuildings() {
         departments: [],
         image: "",
         markerIcon: "building",
+        polygon: null,
       });
     }
     setMapClickEnabled(false);
@@ -309,6 +313,40 @@ export default function AdminBuildings() {
                     placeholder="https://example.com/image.jpg"
                     data-testid="input-building-image"
                   />
+                </div>
+
+                <div>
+                  <Label>
+                    <Shapes className="w-4 h-4 inline mr-2" />
+                    Building Area / Boundary (Optional)
+                  </Label>
+                  <p className="text-sm text-muted-foreground mt-1 mb-3">
+                    Draw a polygon or rectangle to highlight the building's area on the map. This helps users identify the building's footprint.
+                  </p>
+                  <div className="h-[300px] rounded-lg overflow-hidden border">
+                    <PolygonDrawingMap
+                      centerLat={formData.lat}
+                      centerLng={formData.lng}
+                      polygon={formData.polygon as LatLng[] | null}
+                      onPolygonChange={(polygon) => setFormData({ ...formData, polygon: polygon as any })}
+                    />
+                  </div>
+                  {formData.polygon && Array.isArray(formData.polygon) && formData.polygon.length > 0 && (
+                    <div className="mt-2 flex items-center gap-2 text-sm text-muted-foreground">
+                      <Shapes className="w-4 h-4" />
+                      <span>Polygon with {formData.polygon.length} points</span>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setFormData({ ...formData, polygon: null })}
+                        data-testid="button-clear-polygon"
+                        className="ml-auto text-destructive"
+                      >
+                        Clear Polygon
+                      </Button>
+                    </div>
+                  )}
                 </div>
 
                 {canHaveDepartments(formData.type as any) && (
