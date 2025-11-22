@@ -1,7 +1,6 @@
 import React from "react";
-import { Navigation, MapPin, Car, Bike, Search } from "lucide-react";
+import { Navigation, MapPin, Car, Bike } from "lucide-react";
 import { Button } from "./ui/button";
-import { Input } from "./ui/input";
 import {
   Dialog,
   DialogContent,
@@ -33,28 +32,15 @@ export default function GetDirectionsDialog({
   const [mode, setMode] = React.useState<'walking' | 'driving'>('walking');
   const [showVehicleSelector, setShowVehicleSelector] = React.useState(false);
   const [selectedVehicle, setSelectedVehicle] = React.useState<VehicleType | null>(null);
-  const [startSearchQuery, setStartSearchQuery] = React.useState<string>("");
 
-  // Reset vehicle selection and search when dialog opens with a new destination
+  // Reset vehicle selection when dialog opens with a new destination
   React.useEffect(() => {
     if (open) {
       setSelectedVehicle(null);
       setShowVehicleSelector(false);
-      setStartSearchQuery("");
+      setSelectedStart("kiosk");
     }
   }, [open, destination]);
-
-  // Filter buildings based on search query
-  const filteredStartLocations = ([
-    { id: 'kiosk', name: KIOSK_LOCATION.name, isKiosk: true as const }
-  ] as const).concat(
-    buildings
-      .filter(b => b.id !== destination?.id)
-      .map(b => ({ ...b, isKiosk: false as const }))
-  ).filter(loc => 
-    startSearchQuery === '' || 
-    loc.name.toLowerCase().includes(startSearchQuery.toLowerCase())
-  );
 
   const handleNavigate = () => {
     if (selectedStart) {
@@ -89,57 +75,30 @@ export default function GetDirectionsDialog({
           </DialogHeader>
 
           <div className="space-y-4 pt-4">
-            <div className="space-y-2">
-              <label className="block text-sm font-medium text-foreground">
+            <div>
+              <label className="block text-sm font-medium text-foreground mb-2">
                 Starting Point
               </label>
-              <div className="flex items-center gap-2 px-3 py-2 border border-input rounded-md bg-background">
-                <Search className="w-4 h-4 text-muted-foreground" />
-                <Input
-                  type="text"
-                  placeholder="Search locations..."
-                  value={startSearchQuery}
-                  onChange={(e) => setStartSearchQuery(e.target.value)}
-                  data-testid="input-dialog-start-search"
-                  className="border-0 bg-transparent h-auto p-0 focus-visible:ring-0"
-                />
-              </div>
-              <div className="border border-input rounded-md bg-background max-h-48 overflow-y-auto space-y-0">
-                {filteredStartLocations.length > 0 ? (
-                  filteredStartLocations.map((loc) => (
-                    <div
-                      key={loc.id}
-                      onClick={() => {
-                        setSelectedStart(loc.id);
-                        setStartSearchQuery("");
-                      }}
-                      role="button"
-                      tabIndex={0}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' || e.key === ' ') {
-                          setSelectedStart(loc.id);
-                          setStartSearchQuery("");
-                        }
-                      }}
-                      className={`w-full text-left px-3 py-2.5 border-b last:border-b-0 transition-all cursor-pointer ${
-                        selectedStart === loc.id
-                          ? "bg-primary/15 text-foreground"
-                          : "bg-background hover:bg-muted/60 text-foreground"
-                      }`}
-                      data-testid={`button-dialog-start-${loc.id}`}
-                    >
-                      <div className="flex items-center gap-2">
-                        <MapPin className="w-4 h-4 text-primary flex-shrink-0" />
-                        <span className="text-sm font-medium">{loc.name}</span>
-                      </div>
+              <Select value={selectedStart} onValueChange={setSelectedStart}>
+                <SelectTrigger data-testid="select-dialog-start">
+                  <SelectValue placeholder="Select starting location" />
+                </SelectTrigger>
+                <SelectContent className="z-[1002]">
+                  <SelectItem value="kiosk">
+                    <div className="flex items-center gap-2">
+                      <MapPin className="w-4 h-4 text-blue-600" />
+                      <span className="font-semibold">{KIOSK_LOCATION.name}</span>
                     </div>
-                  ))
-                ) : (
-                  <div className="px-3 py-4 text-sm text-muted-foreground text-center">
-                    No locations found
-                  </div>
-                )}
-              </div>
+                  </SelectItem>
+                  {buildings
+                    .filter(b => b.id !== destination?.id)
+                    .map(building => (
+                      <SelectItem key={building.id} value={building.id}>
+                        {building.name}
+                      </SelectItem>
+                    ))}
+                </SelectContent>
+              </Select>
             </div>
 
             <div>
