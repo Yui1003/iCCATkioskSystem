@@ -10,6 +10,7 @@ interface PolygonDrawingMapProps {
   centerLng: number;
   polygon?: LatLng[] | null;
   onPolygonChange: (polygon: LatLng[] | null) => void;
+  polygonColor?: string;
   className?: string;
 }
 
@@ -24,6 +25,7 @@ export default function PolygonDrawingMap({
   centerLng,
   polygon,
   onPolygonChange,
+  polygonColor = "#FACC15",
   className = "h-full w-full"
 }: PolygonDrawingMapProps) {
   const mapRef = useRef<HTMLDivElement>(null);
@@ -64,8 +66,8 @@ export default function PolygonDrawingMap({
           allowIntersection: false,
           showArea: true,
           shapeOptions: {
-            color: '#FACC15',
-            fillColor: '#FACC15',
+            color: polygonColor,
+            fillColor: polygonColor,
             fillOpacity: 0.4,
             weight: 3
           },
@@ -80,8 +82,8 @@ export default function PolygonDrawingMap({
         marker: false,
         rectangle: {
           shapeOptions: {
-            color: '#FACC15',
-            fillColor: '#FACC15',
+            color: polygonColor,
+            fillColor: polygonColor,
             fillOpacity: 0.4,
             weight: 3
           }

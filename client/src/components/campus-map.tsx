@@ -397,9 +397,10 @@ export default function CampusMap({
     buildings.forEach(building => {
       if (building.polygon && Array.isArray(building.polygon) && building.polygon.length > 2) {
         const latlngs = building.polygon.map((p: any) => [p.lat, p.lng]);
+        const polygonColor = (building as any).polygonColor || '#FACC15';
         const polygon = L.polygon(latlngs, {
-          color: '#FACC15',
-          fillColor: '#FACC15',
+          color: polygonColor,
+          fillColor: polygonColor,
           fillOpacity: 0.3,
           weight: 2
         }).addTo(mapInstanceRef.current);

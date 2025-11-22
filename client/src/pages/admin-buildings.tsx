@@ -30,6 +30,7 @@ export default function AdminBuildings() {
     image: "",
     markerIcon: "building",
     polygon: null,
+    polygonColor: "#FACC15",
   });
   const [departmentInput, setDepartmentInput] = useState("");
   const [mapClickEnabled, setMapClickEnabled] = useState(false);
@@ -85,6 +86,7 @@ export default function AdminBuildings() {
         image: building.image || "",
         markerIcon: building.markerIcon || "building",
         polygon: building.polygon || null,
+        polygonColor: (building as any).polygonColor || "#FACC15",
       });
     } else {
       setEditingBuilding(null);
@@ -98,6 +100,7 @@ export default function AdminBuildings() {
         image: "",
         markerIcon: "building",
         polygon: null,
+        polygonColor: "#FACC15",
       });
     }
     setMapClickEnabled(false);
@@ -323,12 +326,29 @@ export default function AdminBuildings() {
                   <p className="text-sm text-muted-foreground mt-1 mb-3">
                     Draw a polygon or rectangle to highlight the building's area on the map. This helps users identify the building's footprint.
                   </p>
+                  
+                  <div className="mb-4">
+                    <Label htmlFor="polygonColor" className="text-sm">Polygon Color</Label>
+                    <div className="flex items-center gap-3 mt-2">
+                      <Input
+                        id="polygonColor"
+                        type="color"
+                        value={formData.polygonColor || "#FACC15"}
+                        onChange={(e) => setFormData({ ...formData, polygonColor: e.target.value })}
+                        data-testid="input-polygon-color"
+                        className="w-16 h-10 cursor-pointer"
+                      />
+                      <span className="text-sm text-muted-foreground">{formData.polygonColor || "#FACC15"}</span>
+                    </div>
+                  </div>
+
                   <div className="h-[300px] rounded-lg overflow-hidden border">
                     <PolygonDrawingMap
                       centerLat={formData.lat}
                       centerLng={formData.lng}
                       polygon={formData.polygon as LatLng[] | null}
                       onPolygonChange={(polygon) => setFormData({ ...formData, polygon: polygon as any })}
+                      polygonColor={formData.polygonColor || "#FACC15"}
                     />
                   </div>
                   {formData.polygon && Array.isArray(formData.polygon) && formData.polygon.length > 0 && (

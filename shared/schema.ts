@@ -113,6 +113,7 @@ export const buildings = pgTable("buildings", {
   image: text("image"),
   markerIcon: text("marker_icon").default("building"),
   polygon: jsonb("polygon"), // Array of {lat, lng} objects for building boundary/area
+  polygonColor: text("polygon_color").default("#FACC15"), // Hex color for polygon highlight
 });
 
 export const insertBuildingSchema = createInsertSchema(buildings).omit({ id: true });
