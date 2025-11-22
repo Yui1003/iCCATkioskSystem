@@ -74,7 +74,7 @@ export default function FeedbackPage() {
   const [showBackDialog, setShowBackDialog] = useState(false);
   const [submittedUserId, setSubmittedUserId] = useState<number | null>(null);
   const [comments, setComments] = useState("");
-  const [highlightedField, setHighlightedField] = useState<string | null>(null);
+  const [highlightedFields, setHighlightedFields] = useState<Set<string>>(new Set());
   const sectionRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const [ratings, setRatings] = useState<FeedbackRatings>({
     functionalCompleteness: null,
@@ -116,6 +116,14 @@ export default function FeedbackPage() {
 
   const updateRating = (key: keyof FeedbackRatings, value: number) => {
     setRatings((prev) => ({ ...prev, [key]: value }));
+    // Remove from highlighted set if question is answered
+    if (value !== null) {
+      setHighlightedFields((prev) => {
+        const newSet = new Set(prev);
+        newSet.delete(key);
+        return newSet;
+      });
+    }
   };
 
   // Count how many questions have been answered
@@ -164,15 +172,16 @@ export default function FeedbackPage() {
     // Validate all ratings are filled
     const missingRatings = Object.entries(ratings).filter(([, value]) => value === null);
     if (missingRatings.length > 0) {
-      const firstMissingField = missingRatings[0][0];
-      setHighlightedField(firstMissingField);
+      const missingFields = new Set(missingRatings.map(([key]) => key));
+      setHighlightedFields(missingFields);
       
       // Scroll to the first unanswered question
+      const firstMissingField = missingRatings[0][0];
       const ref = sectionRefs.current[firstMissingField];
       if (ref) {
         ref.scrollIntoView({ behavior: 'smooth', block: 'center' });
         // Auto-unhighlight after 3 seconds
-        setTimeout(() => setHighlightedField(null), 3000);
+        setTimeout(() => setHighlightedFields(new Set()), 3000);
       }
       
       toast({
@@ -201,7 +210,7 @@ export default function FeedbackPage() {
   };
 
   const RatingRow = ({ label, field }: { label: string; field: keyof FeedbackRatings }) => {
-    const isHighlighted = highlightedField === field;
+    const isHighlighted = highlightedFields.has(field);
     return (
       <div 
         ref={(el) => { sectionRefs.current[field] = el; }}
