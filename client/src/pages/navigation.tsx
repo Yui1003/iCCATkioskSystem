@@ -317,6 +317,61 @@ export default function Navigation() {
     vehicleType: VehicleType
   ): Promise<NavigationRoute | null> => {
     try {
+      // Check if destination IS a parking lot matching the vehicle type
+      // If so, use single-phase routing (just drive there directly)
+      const vehicleToParkingType: Record<VehicleType, string> = {
+        'car': 'Car Parking',
+        'motorcycle': 'Motorcycle Parking',
+        'bike': 'Bike Parking'
+      };
+
+      if (end.type === vehicleToParkingType[vehicleType]) {
+        // Single-phase route: just drive to the parking lot
+        const drivingPolyline = await calculateRouteClientSide(start, end, 'driving');
+        
+        if (!drivingPolyline) {
+          toast({
+            title: "Route Calculation Failed",
+            description: `Unable to calculate route to ${end.name}. Please try a different destination.`,
+            variant: "destructive"
+          });
+          return null;
+        }
+
+        const { steps, totalDistance } = generateSmartSteps(
+          drivingPolyline,
+          'driving',
+          start.name,
+          end.name
+        );
+
+        toast({
+          title: "Route Calculated",
+          description: `Direct route to ${end.name}`,
+          variant: "default"
+        });
+
+        return {
+          start,
+          end,
+          mode: 'driving',
+          vehicleType,
+          polyline: drivingPolyline,
+          steps,
+          totalDistance,
+          phases: [
+            {
+              mode: 'driving',
+              polyline: drivingPolyline,
+              steps,
+              distance: totalDistance,
+              startName: start.name,
+              endName: end.name
+            }
+          ]
+        };
+      }
+
       // Find nearest parking to destination
       const parkingLocation = findNearestParkingByType(end, vehicleType);
       
