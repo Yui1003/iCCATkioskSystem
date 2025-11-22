@@ -138,7 +138,7 @@ export default function PolygonDrawingMap({
         mapInstanceRef.current = null;
       }
     };
-  }, []);
+  }, [polygonColor]);
 
   useEffect(() => {
     if (!mapInstanceRef.current || !window.L) return;
@@ -155,15 +155,15 @@ export default function PolygonDrawingMap({
     if (polygon && polygon.length > 0) {
       const latlngs = polygon.map((p: LatLng) => [p.lat, p.lng]);
       const polygonLayer = L.polygon(latlngs, {
-        color: '#FACC15',
-        fillColor: '#FACC15',
+        color: polygonColor,
+        fillColor: polygonColor,
         fillOpacity: 0.4,
         weight: 3
       });
       
       drawnItemsRef.current.addLayer(polygonLayer);
     }
-  }, [polygon]);
+  }, [polygon, polygonColor]);
 
   return <div ref={mapRef} className={className} data-testid="polygon-drawing-map" />;
 }
