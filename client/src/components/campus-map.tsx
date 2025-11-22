@@ -168,6 +168,43 @@ export default function CampusMap({
     };
   }, [onMapClick]);
 
+  // Add campus boundary constraint
+  useEffect(() => {
+    if (!mapInstanceRef.current) return;
+
+    const L = window.L;
+    const map = mapInstanceRef.current;
+
+    // Define campus boundary polygon (CCAT Campus, Cavite State University)
+    const campusBoundary = L.polygon([
+      [14.404, 120.864],  // Northwest
+      [14.404, 120.869],  // Northeast
+      [14.400, 120.869],  // Southeast
+      [14.400, 120.864],  // Southwest
+    ], {
+      fillOpacity: 0,
+      weight: 0,
+    }).addTo(map);
+
+    // Store boundary for moveend handler
+    const boundaryBounds = campusBoundary.getBounds();
+
+    const handleMoveEnd = () => {
+      // Check if map center is within boundary
+      if (!boundaryBounds.contains(map.getCenter())) {
+        // Pan back inside the boundary
+        map.panInsideBounds(boundaryBounds);
+      }
+    };
+
+    map.on('moveend', handleMoveEnd);
+
+    return () => {
+      map.off('moveend', handleMoveEnd);
+      campusBoundary.remove();
+    };
+  }, []);
+
   useEffect(() => {
     if (!mapInstanceRef.current) return;
     
