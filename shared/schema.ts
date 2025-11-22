@@ -112,6 +112,7 @@ export const buildings = pgTable("buildings", {
   departments: text("departments").array(),
   image: text("image"),
   markerIcon: text("marker_icon").default("building"),
+  polygon: jsonb("polygon"), // Array of {lat, lng} objects for building boundary/area
 });
 
 export const insertBuildingSchema = createInsertSchema(buildings).omit({ id: true });
@@ -279,7 +280,7 @@ export interface NavigationRoute {
 // Feedback table - for user feedback based on ISO 25010
 export const feedbacks = pgTable("feedbacks", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  userId: text("user_id").notNull(),
+  userId: integer("user_id").notNull(), // Auto-generated sequential user number
   timestamp: timestamp("timestamp").notNull().defaultNow(),
   
   // Individual ratings (1-5) for all 35 questions
