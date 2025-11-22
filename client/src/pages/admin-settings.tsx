@@ -1,9 +1,9 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Settings, Loader2 } from "lucide-react";
+import { Settings, Loader2, Power } from "lucide-react";
 import AdminLayout from "@/components/admin-layout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,6 +12,16 @@ import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient } from "@/lib/queryClient";
 import { invalidateEndpointCache } from "@/lib/offline-data";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface Setting {
   id: string;
@@ -47,6 +57,7 @@ type SettingsFormValues = z.infer<typeof settingsFormSchema>;
 
 export default function AdminSettings() {
   const { toast } = useToast();
+  const [showShutdownDialog, setShowShutdownDialog] = useState(false);
 
   const form = useForm<SettingsFormValues>({
     resolver: zodResolver(settingsFormSchema),
@@ -153,6 +164,41 @@ export default function AdminSettings() {
     updateTimeoutMutation.mutate(values);
   };
 
+  // Shutdown kiosk mutation
+  const shutdownMutation = useMutation({
+    mutationFn: async () => {
+      const response = await fetch('/api/admin/shutdown', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to shutdown kiosk');
+      }
+      
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Shutting Down",
+        description: "The kiosk system is shutting down now...",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Shutdown Failed",
+        description: error.message || "Failed to shutdown the kiosk. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleShutdown = () => {
+    setShowShutdownDialog(false);
+    shutdownMutation.mutate();
+  };
+
   return (
     <AdminLayout>
       <div className="p-8">
@@ -252,8 +298,75 @@ export default function AdminSettings() {
               )}
             </CardContent>
           </Card>
+
+          <Card className="border-destructive">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-destructive">
+                <Power className="w-5 h-5" />
+                Kiosk System Shutdown
+              </CardTitle>
+              <CardDescription>
+                Shut down the entire kiosk system (Windows PC)
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground mb-4">
+                This will shut down the entire Windows PC, not just the web application. 
+                The system will need to be manually powered on again.
+              </p>
+              <Button
+                variant="destructive"
+                onClick={() => setShowShutdownDialog(true)}
+                disabled={shutdownMutation.isPending}
+                data-testid="button-shutdown-kiosk"
+              >
+                {shutdownMutation.isPending && (
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                )}
+                <Power className="w-4 h-4 mr-2" />
+                {shutdownMutation.isPending ? "Shutting Down..." : "Shutdown Kiosk"}
+              </Button>
+            </CardContent>
+          </Card>
         </div>
       </div>
+
+      <AlertDialog open={showShutdownDialog} onOpenChange={setShowShutdownDialog}>
+        <AlertDialogContent data-testid="dialog-shutdown-confirm">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2 text-destructive">
+              <Power className="w-5 h-5" />
+              Confirm System Shutdown
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to shut down the entire kiosk system?
+              <br />
+              <br />
+              This will:
+              <ul className="list-disc list-inside mt-2 space-y-1">
+                <li>Close the web application</li>
+                <li>Shut down the Windows PC completely</li>
+                <li>Require manual power-on to restart</li>
+              </ul>
+              <br />
+              <strong>This action cannot be undone remotely.</strong>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel data-testid="button-cancel-shutdown">
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleShutdown}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              data-testid="button-confirm-shutdown"
+            >
+              <Power className="w-4 h-4 mr-2" />
+              Shutdown Now
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </AdminLayout>
   );
 }
