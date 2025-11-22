@@ -13,7 +13,10 @@ import CampusMap from "@/components/campus-map";
 import BuildingInfoModal from "@/components/building-info-modal";
 import FloorPlanViewer from "@/components/floor-plan-viewer";
 import GetDirectionsDialog from "@/components/get-directions-dialog";
+<<<<<<< HEAD
 import SearchableStartingPointSelect from "@/components/searchable-starting-point-select";
+=======
+>>>>>>> 81bf8d14f088615586fd56287423b7746ac60294
 import type { Building, NavigationRoute, Staff, Floor, Room, VehicleType } from "@shared/schema";
 import { poiTypes, KIOSK_LOCATION } from "@shared/schema";
 import { useGlobalInactivity } from "@/hooks/use-inactivity";
@@ -832,9 +835,15 @@ export default function Navigation() {
                 <label className="block text-sm font-medium text-foreground mb-2">
                   Starting Point
                 </label>
+<<<<<<< HEAD
                 <SearchableStartingPointSelect
                   selectedId={selectedStart?.id}
                   onSelect={(id) => {
+=======
+                <Select
+                  value={selectedStart?.id}
+                  onValueChange={(id) => {
+>>>>>>> 81bf8d14f088615586fd56287423b7746ac60294
                     if (id === 'kiosk') {
                       setSelectedStart(KIOSK_LOCATION as any);
                     } else {
@@ -842,9 +851,30 @@ export default function Navigation() {
                       setSelectedStart(building || null);
                     }
                   }}
+<<<<<<< HEAD
                   buildings={buildings}
                   testId="select-start"
                 />
+=======
+                >
+                  <SelectTrigger data-testid="select-start">
+                    <SelectValue placeholder="Select starting location" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="kiosk">
+                      <div className="flex items-center gap-2">
+                        <MapPin className="w-4 h-4 text-blue-600" />
+                        <span className="font-semibold">{KIOSK_LOCATION.name}</span>
+                      </div>
+                    </SelectItem>
+                    {buildings.map(building => (
+                      <SelectItem key={building.id} value={building.id}>
+                        {building.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+>>>>>>> 81bf8d14f088615586fd56287423b7746ac60294
               </div>
 
               <div>

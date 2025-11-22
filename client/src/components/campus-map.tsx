@@ -168,6 +168,7 @@ export default function CampusMap({
     };
   }, [onMapClick]);
 
+<<<<<<< HEAD
   // Add campus boundary constraint (conditional on zoom level)
   useEffect(() => {
     if (!mapInstanceRef.current) return;
@@ -215,6 +216,8 @@ export default function CampusMap({
     };
   }, []);
 
+=======
+>>>>>>> 81bf8d14f088615586fd56287423b7746ac60294
   useEffect(() => {
     if (!mapInstanceRef.current) return;
     

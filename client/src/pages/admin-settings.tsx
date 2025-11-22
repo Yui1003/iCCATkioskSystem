@@ -446,13 +446,21 @@ export default function AdminSettings() {
       </AlertDialog>
 
       <AlertDialog open={showClearFeedbackDialog} onOpenChange={setShowClearFeedbackDialog}>
+<<<<<<< HEAD
         <AlertDialogContent data-testid="dialog-clear-feedback-confirm">
+=======
+        <AlertDialogContent data-testid="dialog-clear-feedback-confirm" className="max-h-[90vh] overflow-y-auto">
+>>>>>>> 81bf8d14f088615586fd56287423b7746ac60294
           <AlertDialogHeader>
             <AlertDialogTitle className="flex items-center gap-2 text-destructive">
               <Trash2 className="w-5 h-5" />
               Clear All Feedback - TESTING ONLY
             </AlertDialogTitle>
+<<<<<<< HEAD
             <AlertDialogDescription>
+=======
+            <AlertDialogDescription className="max-h-60 overflow-y-auto pr-4">
+>>>>>>> 81bf8d14f088615586fd56287423b7746ac60294
               <strong className="text-destructive">⚠️ DANGER: This action is PERMANENT and IRREVERSIBLE!</strong>
               <br />
               <br />
@@ -478,11 +486,19 @@ export default function AdminSettings() {
             </AlertDialogCancel>
             <AlertDialogAction
               onClick={handleClearFeedback}
+<<<<<<< HEAD
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90 flex items-center gap-2"
               data-testid="button-confirm-clear-feedback"
             >
               <Trash2 className="w-4 h-4" />
               <span>Delete All</span>
+=======
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              data-testid="button-confirm-clear-feedback"
+            >
+              <Trash2 className="w-4 h-4 mr-2" />
+              Yes, Permanently Delete All Feedback
+>>>>>>> 81bf8d14f088615586fd56287423b7746ac60294
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

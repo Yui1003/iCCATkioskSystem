@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 import { useState, useRef } from "react";
+=======
+import { useState } from "react";
+>>>>>>> 81bf8d14f088615586fd56287423b7746ac60294
 import { Link, useLocation } from "wouter";
 import { ArrowLeft, Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -74,8 +78,11 @@ export default function FeedbackPage() {
   const [showBackDialog, setShowBackDialog] = useState(false);
   const [submittedUserId, setSubmittedUserId] = useState<number | null>(null);
   const [comments, setComments] = useState("");
+<<<<<<< HEAD
   const [highlightedFields, setHighlightedFields] = useState<Set<string>>(new Set());
   const sectionRefs = useRef<Record<string, HTMLDivElement | null>>({});
+=======
+>>>>>>> 81bf8d14f088615586fd56287423b7746ac60294
   const [ratings, setRatings] = useState<FeedbackRatings>({
     functionalCompleteness: null,
     functionalCorrectness: null,
@@ -116,6 +123,7 @@ export default function FeedbackPage() {
 
   const updateRating = (key: keyof FeedbackRatings, value: number) => {
     setRatings((prev) => ({ ...prev, [key]: value }));
+<<<<<<< HEAD
     // Remove from highlighted set if question is answered
     if (value !== null) {
       setHighlightedFields((prev) => {
@@ -124,6 +132,8 @@ export default function FeedbackPage() {
         return newSet;
       });
     }
+=======
+>>>>>>> 81bf8d14f088615586fd56287423b7746ac60294
   };
 
   // Count how many questions have been answered
@@ -172,6 +182,7 @@ export default function FeedbackPage() {
     // Validate all ratings are filled
     const missingRatings = Object.entries(ratings).filter(([, value]) => value === null);
     if (missingRatings.length > 0) {
+<<<<<<< HEAD
       const missingFields = new Set(missingRatings.map(([key]) => key));
       setHighlightedFields(missingFields);
       
@@ -184,6 +195,8 @@ export default function FeedbackPage() {
         setTimeout(() => setHighlightedFields(new Set()), 3000);
       }
       
+=======
+>>>>>>> 81bf8d14f088615586fd56287423b7746ac60294
       toast({
         title: "Incomplete Form",
         description: `Please answer all ${totalQuestions} questions before submitting.`,
@@ -209,6 +222,7 @@ export default function FeedbackPage() {
     }
   };
 
+<<<<<<< HEAD
   const RatingRow = ({ label, field }: { label: string; field: keyof FeedbackRatings }) => {
     const isHighlighted = highlightedFields.has(field);
     return (
@@ -227,12 +241,29 @@ export default function FeedbackPage() {
       </div>
     );
   };
+=======
+  const RatingRow = ({ label, field }: { label: string; field: keyof FeedbackRatings }) => (
+    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 py-4 border-b last:border-b-0">
+      <Label className="text-base flex-1">{label}</Label>
+      <StarRating
+        value={ratings[field]}
+        onChange={(value) => updateRating(field, value)}
+        disabled={submitMutation.isPending}
+      />
+    </div>
+  );
+>>>>>>> 81bf8d14f088615586fd56287423b7746ac60294
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary/20 via-background to-accent/10 p-6">
       <div className="max-w-4xl mx-auto">
+<<<<<<< HEAD
         {/* Header - Sticky */}
         <div className="sticky top-0 z-40 mb-6 flex items-center justify-between bg-gradient-to-br from-primary/20 via-background to-accent/10 py-3 -mx-6 px-6">
+=======
+        {/* Header */}
+        <div className="mb-6 flex items-center justify-between">
+>>>>>>> 81bf8d14f088615586fd56287423b7746ac60294
           <Button
             variant="ghost"
             onClick={handleBackClick}
@@ -242,7 +273,11 @@ export default function FeedbackPage() {
             <ArrowLeft className="w-4 h-4" />
             Back to Home
           </Button>
+<<<<<<< HEAD
           <div className="text-sm font-semibold text-muted-foreground" data-testid="text-questions-answered">
+=======
+          <div className="text-sm text-muted-foreground">
+>>>>>>> 81bf8d14f088615586fd56287423b7746ac60294
             {answeredCount} of {totalQuestions} questions answered
           </div>
         </div>
