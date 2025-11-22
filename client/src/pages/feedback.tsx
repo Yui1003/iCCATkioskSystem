@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Link, useLocation } from "wouter";
 import { ArrowLeft, Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -74,6 +74,8 @@ export default function FeedbackPage() {
   const [showBackDialog, setShowBackDialog] = useState(false);
   const [submittedUserId, setSubmittedUserId] = useState<number | null>(null);
   const [comments, setComments] = useState("");
+  const [highlightedField, setHighlightedField] = useState<string | null>(null);
+  const sectionRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const [ratings, setRatings] = useState<FeedbackRatings>({
     functionalCompleteness: null,
     functionalCorrectness: null,
@@ -162,6 +164,17 @@ export default function FeedbackPage() {
     // Validate all ratings are filled
     const missingRatings = Object.entries(ratings).filter(([, value]) => value === null);
     if (missingRatings.length > 0) {
+      const firstMissingField = missingRatings[0][0];
+      setHighlightedField(firstMissingField);
+      
+      // Scroll to the first unanswered question
+      const ref = sectionRefs.current[firstMissingField];
+      if (ref) {
+        ref.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        // Auto-unhighlight after 3 seconds
+        setTimeout(() => setHighlightedField(null), 3000);
+      }
+      
       toast({
         title: "Incomplete Form",
         description: `Please answer all ${totalQuestions} questions before submitting.`,
@@ -187,22 +200,30 @@ export default function FeedbackPage() {
     }
   };
 
-  const RatingRow = ({ label, field }: { label: string; field: keyof FeedbackRatings }) => (
-    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 py-4 border-b last:border-b-0">
-      <Label className="text-base flex-1">{label}</Label>
-      <StarRating
-        value={ratings[field]}
-        onChange={(value) => updateRating(field, value)}
-        disabled={submitMutation.isPending}
-      />
-    </div>
-  );
+  const RatingRow = ({ label, field }: { label: string; field: keyof FeedbackRatings }) => {
+    const isHighlighted = highlightedField === field;
+    return (
+      <div 
+        ref={(el) => { sectionRefs.current[field] = el; }}
+        className={`flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 py-4 border-b last:border-b-0 transition-colors ${
+          isHighlighted ? 'bg-yellow-100 dark:bg-yellow-900/20 px-3 -mx-3' : ''
+        }`}
+      >
+        <Label className="text-base flex-1">{label}</Label>
+        <StarRating
+          value={ratings[field]}
+          onChange={(value) => updateRating(field, value)}
+          disabled={submitMutation.isPending}
+        />
+      </div>
+    );
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary/20 via-background to-accent/10 p-6">
       <div className="max-w-4xl mx-auto">
-        {/* Header */}
-        <div className="mb-6 flex items-center justify-between">
+        {/* Header - Sticky */}
+        <div className="sticky top-0 z-40 mb-6 flex items-center justify-between bg-gradient-to-br from-primary/20 via-background to-accent/10 py-3 -mx-6 px-6">
           <Button
             variant="ghost"
             onClick={handleBackClick}
@@ -212,7 +233,7 @@ export default function FeedbackPage() {
             <ArrowLeft className="w-4 h-4" />
             Back to Home
           </Button>
-          <div className="text-sm text-muted-foreground">
+          <div className="text-sm font-semibold text-muted-foreground" data-testid="text-questions-answered">
             {answeredCount} of {totalQuestions} questions answered
           </div>
         </div>

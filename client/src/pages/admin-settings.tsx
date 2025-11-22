@@ -478,11 +478,11 @@ export default function AdminSettings() {
             </AlertDialogCancel>
             <AlertDialogAction
               onClick={handleClearFeedback}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90 flex items-center gap-2"
               data-testid="button-confirm-clear-feedback"
             >
-              <Trash2 className="w-4 h-4 mr-2" />
-              Yes, Permanently Delete All Feedback
+              <Trash2 className="w-4 h-4" />
+              <span>Delete All</span>
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
