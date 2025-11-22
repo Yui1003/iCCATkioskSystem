@@ -34,6 +34,7 @@ export default function Navigation() {
   const [selectedFloor, setSelectedFloor] = useState<Floor | null>(null);
   const [filterType, setFilterType] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState<string>("");
+  const [startSearchQuery, setStartSearchQuery] = useState<string>("");
   const [showDirectionsDialog, setShowDirectionsDialog] = useState(false);
   const [directionsDestination, setDirectionsDestination] = useState<Building | null>(null);
 
@@ -827,38 +828,63 @@ export default function Navigation() {
                 </Select>
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-foreground mb-2">
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-foreground">
                   Starting Point
                 </label>
-                <Select
-                  value={selectedStart?.id}
-                  onValueChange={(id) => {
-                    if (id === 'kiosk') {
-                      setSelectedStart(KIOSK_LOCATION as any);
-                    } else {
-                      const building = buildings.find(b => b.id === id);
-                      setSelectedStart(building || null);
-                    }
-                  }}
-                >
-                  <SelectTrigger data-testid="select-start">
-                    <SelectValue placeholder="Select starting location" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="kiosk">
-                      <div className="flex items-center gap-2">
-                        <MapPin className="w-4 h-4 text-blue-600" />
-                        <span className="font-semibold">{KIOSK_LOCATION.name}</span>
-                      </div>
-                    </SelectItem>
-                    {buildings.map(building => (
-                      <SelectItem key={building.id} value={building.id}>
-                        {building.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <div className="flex items-center gap-2 px-3 py-2 border border-input rounded-md bg-background">
+                  <Search className="w-4 h-4 text-muted-foreground" />
+                  <Input
+                    type="text"
+                    placeholder="Search locations..."
+                    value={startSearchQuery}
+                    onChange={(e) => setStartSearchQuery(e.target.value)}
+                    data-testid="input-start-search"
+                    className="border-0 bg-transparent h-auto p-0 focus-visible:ring-0"
+                  />
+                </div>
+                <div className="border border-input rounded-md bg-background max-h-48 overflow-y-auto">
+                  {(startSearchQuery === '' ? 
+                    [{ id: 'kiosk', name: KIOSK_LOCATION.name, isKiosk: true } as any].concat(buildings) :
+                    [{ id: 'kiosk', name: KIOSK_LOCATION.name, isKiosk: true } as any]
+                      .concat(buildings)
+                      .filter(loc => loc.name.toLowerCase().includes(startSearchQuery.toLowerCase()))
+                  ).length > 0 ? (
+                    (startSearchQuery === '' ? 
+                      [{ id: 'kiosk', name: KIOSK_LOCATION.name, isKiosk: true } as any].concat(buildings) :
+                      [{ id: 'kiosk', name: KIOSK_LOCATION.name, isKiosk: true } as any]
+                        .concat(buildings)
+                        .filter(loc => loc.name.toLowerCase().includes(startSearchQuery.toLowerCase()))
+                    ).map(loc => (
+                      <button
+                        key={loc.id}
+                        onClick={() => {
+                          if (loc.isKiosk) {
+                            setSelectedStart(KIOSK_LOCATION as any);
+                          } else {
+                            setSelectedStart(loc);
+                          }
+                          setStartSearchQuery("");
+                        }}
+                        className={`w-full text-left px-3 py-2 hover-elevate border-b last:border-b-0 transition-colors ${
+                          selectedStart?.id === loc.id
+                            ? "bg-primary/10 text-foreground"
+                            : "hover:bg-muted text-foreground"
+                        }`}
+                        data-testid={`button-start-${loc.id}`}
+                      >
+                        <div className="flex items-center gap-2">
+                          <MapPin className="w-4 h-4 text-primary flex-shrink-0" />
+                          <span className="text-sm font-medium">{loc.name}</span>
+                        </div>
+                      </button>
+                    ))
+                  ) : (
+                    <div className="px-3 py-4 text-sm text-muted-foreground text-center">
+                      No locations found
+                    </div>
+                  )}
+                </div>
               </div>
 
               <div>
