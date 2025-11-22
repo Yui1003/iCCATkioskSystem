@@ -446,13 +446,13 @@ export default function AdminSettings() {
       </AlertDialog>
 
       <AlertDialog open={showClearFeedbackDialog} onOpenChange={setShowClearFeedbackDialog}>
-        <AlertDialogContent data-testid="dialog-clear-feedback-confirm" className="max-h-[90vh] overflow-y-auto">
+        <AlertDialogContent data-testid="dialog-clear-feedback-confirm">
           <AlertDialogHeader>
             <AlertDialogTitle className="flex items-center gap-2 text-destructive">
               <Trash2 className="w-5 h-5" />
               Clear All Feedback - TESTING ONLY
             </AlertDialogTitle>
-            <AlertDialogDescription className="max-h-60 overflow-y-auto pr-4">
+            <AlertDialogDescription>
               <strong className="text-destructive">⚠️ DANGER: This action is PERMANENT and IRREVERSIBLE!</strong>
               <br />
               <br />
