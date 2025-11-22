@@ -182,16 +182,16 @@ export default function CampusMap({
       L.latLng(14.4047, 120.8695)   // Northeast corner
     );
 
-    // Expanded bounds for zoomed-in views (allows panning when zoomed)
+    // Slightly expanded bounds for zoomed-in views (relaxed but still restricted)
     const expandedBounds = L.latLngBounds(
-      L.latLng(14.3950, 120.8600),   // Southwest corner (expanded)
-      L.latLng(14.4099, 120.8745)    // Northeast corner (expanded)
+      L.latLng(14.3985, 120.8635),   // Southwest corner (slightly expanded)
+      L.latLng(14.4064, 120.8710)    // Northeast corner (slightly expanded)
     );
 
     const updateBoundsBasedOnZoom = () => {
       const currentZoom = map.getZoom();
       // At default zoom (17.5-18), use strict campus bounds
-      // When zoomed in beyond 18, use expanded bounds to allow panning
+      // When zoomed in beyond 18, use expanded bounds to allow some panning
       if (currentZoom <= 18) {
         map.setMaxBounds(campusBounds);
       } else {
