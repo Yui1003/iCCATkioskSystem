@@ -168,7 +168,7 @@ export default function CampusMap({
     };
   }, [onMapClick]);
 
-  // Add campus boundary constraint
+  // Add campus boundary constraint (conditional on zoom level)
   useEffect(() => {
     if (!mapInstanceRef.current) return;
 
@@ -182,14 +182,35 @@ export default function CampusMap({
       L.latLng(14.4047, 120.8695)   // Northeast corner
     );
 
-    // Set max bounds - prevents panning/zooming outside this area
-    map.setMaxBounds(campusBounds);
+    // Expanded bounds for zoomed-in views (allows panning when zoomed)
+    const expandedBounds = L.latLngBounds(
+      L.latLng(14.3950, 120.8600),   // Southwest corner (expanded)
+      L.latLng(14.4099, 120.8745)    // Northeast corner (expanded)
+    );
+
+    const updateBoundsBasedOnZoom = () => {
+      const currentZoom = map.getZoom();
+      // At default zoom (17.5-18), use strict campus bounds
+      // When zoomed in beyond 18, use expanded bounds to allow panning
+      if (currentZoom <= 18) {
+        map.setMaxBounds(campusBounds);
+      } else {
+        map.setMaxBounds(expandedBounds);
+      }
+    };
+
+    // Set initial bounds
+    updateBoundsBasedOnZoom();
+    
+    // Update bounds whenever zoom level changes
+    map.on('zoomend', updateBoundsBasedOnZoom);
     
     // Restrict zoom levels to stay focused on campus
-    map.setMinZoom(18);
+    map.setMinZoom(17.5);
     map.setMaxZoom(19);
 
     return () => {
+      map.off('zoomend', updateBoundsBasedOnZoom);
       map.setMaxBounds(null);
     };
   }, []);
