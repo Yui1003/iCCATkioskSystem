@@ -1055,6 +1055,7 @@ export default function Navigation() {
             selectedBuilding={selectedBuilding}
             routePolyline={route?.polyline}
             routeMode={route?.mode}
+            routePhases={route?.phases}
           />
         </main>
       </div>

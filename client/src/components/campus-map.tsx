@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import type { Building } from "@shared/schema";
+import type { Building, RoutePhase } from "@shared/schema";
 import { KIOSK_LOCATION } from "@shared/schema";
 
 import buildingIcon from '@assets/generated_images/Building_icon_green_background_3206ffb3.png';
@@ -39,6 +39,7 @@ interface CampusMapProps {
   selectedBuilding?: Building | null;
   routePolyline?: Array<{ lat: number; lng: number }>;
   routeMode?: 'walking' | 'driving';
+  routePhases?: RoutePhase[];
   className?: string;
   onMapClick?: (lat: number, lng: number) => void;
   centerLat?: number;
@@ -103,6 +104,7 @@ export default function CampusMap({
   selectedBuilding,
   routePolyline,
   routeMode,
+  routePhases,
   className = "h-full w-full",
   onMapClick,
   centerLat,
@@ -255,7 +257,80 @@ export default function CampusMap({
     routeMarkersRef.current.forEach(marker => marker.remove());
     routeMarkersRef.current = [];
 
-    if (routePolyline && routePolyline.length > 0) {
+    // Handle multi-phase routes (e.g., drive to parking + walk to destination)
+    if (routePhases && routePhases.length > 0) {
+      const layerGroup = L.layerGroup();
+      const mergedPoints: Array<{ lat: number; lng: number }> = [];
+      
+      routePhases.forEach((phase, index) => {
+        const color = phase.mode === 'driving' ? '#3b82f6' : '#22c55e';
+        let polylinePoints = [...phase.polyline];
+        
+        // Ensure seamless continuity by always connecting consecutive phases
+        if (index > 0 && routePhases[index - 1].polyline.length > 0) {
+          const prevLastPoint = routePhases[index - 1].polyline[routePhases[index - 1].polyline.length - 1];
+          // Always prepend the connection point for visual continuity
+          polylinePoints = [prevLastPoint, ...phase.polyline];
+        }
+        
+        L.polyline(polylinePoints, {
+          color: color,
+          weight: 6,
+          opacity: 0.8,
+          smoothFactor: 1
+        }).addTo(layerGroup);
+        
+        // Build merged points for bounds calculation (excluding duplicate connection points)
+        if (index === 0) {
+          mergedPoints.push(...polylinePoints);
+        } else {
+          // Skip the first point (connection) to avoid duplicates in mergedPoints
+          mergedPoints.push(...polylinePoints.slice(1));
+        }
+      });
+      
+      layerGroup.addTo(mapInstanceRef.current);
+      routeLayerRef.current = layerGroup;
+
+      const allPoints = mergedPoints;
+      
+      if (allPoints.length > 1) {
+        const startIcon = L.divIcon({
+          html: `
+            <div class="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center shadow-lg border-2 border-white">
+              <svg class="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd"></path>
+              </svg>
+            </div>
+          `,
+          className: 'route-marker',
+          iconSize: [40, 40],
+          iconAnchor: [20, 40],
+        });
+
+        const endIcon = L.divIcon({
+          html: `
+            <div class="w-10 h-10 bg-red-500 rounded-full flex items-center justify-center shadow-lg border-2 border-white">
+              <svg class="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd"></path>
+              </svg>
+            </div>
+          `,
+          className: 'route-marker',
+          iconSize: [40, 40],
+          iconAnchor: [20, 40],
+        });
+
+        const startMarker = L.marker(allPoints[0], { icon: startIcon }).addTo(mapInstanceRef.current);
+        const endMarker = L.marker(allPoints[allPoints.length - 1], { icon: endIcon }).addTo(mapInstanceRef.current);
+        
+        routeMarkersRef.current.push(startMarker, endMarker);
+
+        const bounds = L.latLngBounds(allPoints);
+        mapInstanceRef.current.fitBounds(bounds, { padding: [50, 50], maxZoom: 17.5 });
+      }
+    } else if (routePolyline && routePolyline.length > 0) {
+      // Single-phase route (backward compatibility)
       const color = routeMode === 'driving' ? '#3b82f6' : '#22c55e';
       
       routeLayerRef.current = L.polyline(routePolyline, {
@@ -308,7 +383,7 @@ export default function CampusMap({
       
       mapInstanceRef.current.setView([lat, lng], 17.5);
     }
-  }, [routePolyline, routeMode, centerLat, centerLng]);
+  }, [routePolyline, routeMode, routePhases, centerLat, centerLng]);
 
   return <div ref={mapRef} className={className} data-testid="map-container" />;
 }
