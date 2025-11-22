@@ -1,5 +1,5 @@
 import React from "react";
-import { Navigation, MapPin, Car, Bike } from "lucide-react";
+import { Navigation, Car, Bike } from "lucide-react";
 import { Button } from "./ui/button";
 import {
   Dialog,
@@ -8,10 +8,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from "./ui/dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
 import { Tabs, TabsList, TabsTrigger } from "./ui/tabs";
+import SearchableStartingPointSelect from "./searchable-starting-point-select";
 import type { Building, VehicleType } from "@shared/schema";
-import { KIOSK_LOCATION } from "@shared/schema";
 
 interface GetDirectionsDialogProps {
   open: boolean;
@@ -79,26 +78,13 @@ export default function GetDirectionsDialog({
               <label className="block text-sm font-medium text-foreground mb-2">
                 Starting Point
               </label>
-              <Select value={selectedStart} onValueChange={setSelectedStart}>
-                <SelectTrigger data-testid="select-dialog-start">
-                  <SelectValue placeholder="Select starting location" />
-                </SelectTrigger>
-                <SelectContent className="z-[1002]">
-                  <SelectItem value="kiosk">
-                    <div className="flex items-center gap-2">
-                      <MapPin className="w-4 h-4 text-blue-600" />
-                      <span className="font-semibold">{KIOSK_LOCATION.name}</span>
-                    </div>
-                  </SelectItem>
-                  {buildings
-                    .filter(b => b.id !== destination?.id)
-                    .map(building => (
-                      <SelectItem key={building.id} value={building.id}>
-                        {building.name}
-                      </SelectItem>
-                    ))}
-                </SelectContent>
-              </Select>
+              <SearchableStartingPointSelect
+                selectedId={selectedStart}
+                onSelect={setSelectedStart}
+                buildings={buildings}
+                excludeBuildingId={destination?.id}
+                testId="select-dialog-start"
+              />
             </div>
 
             <div>
