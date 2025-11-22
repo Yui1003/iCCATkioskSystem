@@ -11,7 +11,8 @@ import type {
   Walkpath, InsertWalkpath,
   Drivepath, InsertDrivepath,
   AdminUser, InsertAdminUser,
-  Setting, InsertSetting
+  Setting, InsertSetting,
+  Feedback, InsertFeedback
 } from "@shared/schema";
 
 let usingFallback = false;
@@ -593,7 +594,11 @@ export class DatabaseStorage implements IStorage {
   async createSetting(insertSetting: InsertSetting): Promise<Setting> {
     try {
       const id = randomUUID();
-      const setting: Setting = { ...insertSetting, id };
+      const setting: Setting = { 
+        ...insertSetting, 
+        id,
+        description: insertSetting.description ?? null
+      };
       await db.collection('settings').doc(id).set(setting);
       return setting;
     } catch (error) {
@@ -612,7 +617,7 @@ export class DatabaseStorage implements IStorage {
         id: existing.id,
         key: existing.key,
         value,
-        description: existing.description || null
+        description: existing.description ?? null
       };
       await db.collection('settings').doc(existing.id).set(updated);
       return updated;
@@ -624,6 +629,108 @@ export class DatabaseStorage implements IStorage {
 
   async exportToJSON(): Promise<void> {
     console.log('Export to JSON skipped - Firestore is the source of truth');
+  }
+
+  // Feedback
+  async getFeedbacks(): Promise<Feedback[]> {
+    try {
+      const snapshot = await db.collection('feedbacks').orderBy('timestamp', 'desc').get();
+      return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Feedback));
+    } catch (error) {
+      console.error('Firestore error for feedbacks:', error);
+      return [];
+    }
+  }
+
+  async createFeedback(insertFeedback: InsertFeedback): Promise<Feedback> {
+    try {
+      const id = randomUUID();
+      
+      // Calculate category averages
+      const avgFunctionalSuitability = (
+        insertFeedback.functionalCompleteness +
+        insertFeedback.functionalCorrectness +
+        insertFeedback.functionalAppropriateness
+      ) / 3;
+      
+      const avgPerformanceEfficiency = (
+        insertFeedback.timeBehaviour +
+        insertFeedback.resourceUtilization +
+        insertFeedback.capacity
+      ) / 3;
+      
+      const avgCompatibility = (
+        insertFeedback.coExistence +
+        insertFeedback.interoperability
+      ) / 2;
+      
+      const avgUsability = (
+        insertFeedback.appropriatenessRecognizability +
+        insertFeedback.learnability +
+        insertFeedback.operability +
+        insertFeedback.userErrorProtection +
+        insertFeedback.uiAesthetics +
+        insertFeedback.accessibility
+      ) / 6;
+      
+      const avgReliability = (
+        insertFeedback.maturity +
+        insertFeedback.availability +
+        insertFeedback.faultTolerance +
+        insertFeedback.recoverability
+      ) / 4;
+      
+      const avgSecurity = (
+        insertFeedback.confidentiality +
+        insertFeedback.integrity +
+        insertFeedback.nonRepudiation +
+        insertFeedback.accountability +
+        insertFeedback.authenticity
+      ) / 5;
+      
+      const avgMaintainability = (
+        insertFeedback.modularity +
+        insertFeedback.reusability +
+        insertFeedback.analysability +
+        insertFeedback.modifiability +
+        insertFeedback.testability
+      ) / 5;
+      
+      const avgPortability = (
+        insertFeedback.adaptability +
+        insertFeedback.installability +
+        insertFeedback.replaceability
+      ) / 3;
+      
+      const avgUxItems = (
+        insertFeedback.clarityOfInstructions +
+        insertFeedback.comfortAndErgonomics +
+        insertFeedback.navigationIntuitiveness +
+        insertFeedback.userSatisfaction
+      ) / 4;
+      
+      const feedback: Feedback = {
+        id,
+        ...insertFeedback,
+        comments: insertFeedback.comments ?? null,
+        timestamp: new Date(),
+        avgFunctionalSuitability,
+        avgPerformanceEfficiency,
+        avgCompatibility,
+        avgUsability,
+        avgReliability,
+        avgSecurity,
+        avgMaintainability,
+        avgPortability,
+        avgUxItems
+      };
+      
+      await db.collection('feedbacks').doc(id).set(feedback);
+      return feedback;
+    } catch (error) {
+      console.error('Firestore error:', error);
+      throw new Error('Cannot create feedback');
+    }
   }
 }
 

@@ -275,3 +275,77 @@ export interface NavigationRoute {
   parkingLocation?: Building;
   phases?: RoutePhase[];
 }
+
+// Feedback table - for user feedback based on ISO 25010
+export const feedbacks = pgTable("feedbacks", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: text("user_id").notNull(),
+  timestamp: timestamp("timestamp").notNull().defaultNow(),
+  
+  // Individual ratings (1-5) for all 35 questions
+  functionalCompleteness: integer("functional_completeness").notNull(),
+  functionalCorrectness: integer("functional_correctness").notNull(),
+  functionalAppropriateness: integer("functional_appropriateness").notNull(),
+  timeBehaviour: integer("time_behaviour").notNull(),
+  resourceUtilization: integer("resource_utilization").notNull(),
+  capacity: integer("capacity").notNull(),
+  coExistence: integer("co_existence").notNull(),
+  interoperability: integer("interoperability").notNull(),
+  appropriatenessRecognizability: integer("appropriateness_recognizability").notNull(),
+  learnability: integer("learnability").notNull(),
+  operability: integer("operability").notNull(),
+  userErrorProtection: integer("user_error_protection").notNull(),
+  uiAesthetics: integer("ui_aesthetics").notNull(),
+  accessibility: integer("accessibility").notNull(),
+  maturity: integer("maturity").notNull(),
+  availability: integer("availability").notNull(),
+  faultTolerance: integer("fault_tolerance").notNull(),
+  recoverability: integer("recoverability").notNull(),
+  confidentiality: integer("confidentiality").notNull(),
+  integrity: integer("integrity").notNull(),
+  nonRepudiation: integer("non_repudiation").notNull(),
+  accountability: integer("accountability").notNull(),
+  authenticity: integer("authenticity").notNull(),
+  modularity: integer("modularity").notNull(),
+  reusability: integer("reusability").notNull(),
+  analysability: integer("analysability").notNull(),
+  modifiability: integer("modifiability").notNull(),
+  testability: integer("testability").notNull(),
+  adaptability: integer("adaptability").notNull(),
+  installability: integer("installability").notNull(),
+  replaceability: integer("replaceability").notNull(),
+  clarityOfInstructions: integer("clarity_of_instructions").notNull(),
+  comfortAndErgonomics: integer("comfort_and_ergonomics").notNull(),
+  navigationIntuitiveness: integer("navigation_intuitiveness").notNull(),
+  userSatisfaction: integer("user_satisfaction").notNull(),
+  
+  // Calculated averages per category
+  avgFunctionalSuitability: real("avg_functional_suitability").notNull(),
+  avgPerformanceEfficiency: real("avg_performance_efficiency").notNull(),
+  avgCompatibility: real("avg_compatibility").notNull(),
+  avgUsability: real("avg_usability").notNull(),
+  avgReliability: real("avg_reliability").notNull(),
+  avgSecurity: real("avg_security").notNull(),
+  avgMaintainability: real("avg_maintainability").notNull(),
+  avgPortability: real("avg_portability").notNull(),
+  avgUxItems: real("avg_ux_items").notNull(),
+  
+  // Optional comments
+  comments: text("comments"),
+});
+
+export const insertFeedbackSchema = createInsertSchema(feedbacks).omit({ 
+  id: true, 
+  timestamp: true,
+  avgFunctionalSuitability: true,
+  avgPerformanceEfficiency: true,
+  avgCompatibility: true,
+  avgUsability: true,
+  avgReliability: true,
+  avgSecurity: true,
+  avgMaintainability: true,
+  avgPortability: true,
+  avgUxItems: true,
+});
+export type InsertFeedback = z.infer<typeof insertFeedbackSchema>;
+export type Feedback = typeof feedbacks.$inferSelect;

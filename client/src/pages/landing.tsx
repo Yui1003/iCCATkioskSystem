@@ -1,5 +1,5 @@
 import { Link } from "wouter";
-import { Map, Calendar, Users, Info, Clock } from "lucide-react";
+import { Map, Calendar, Users, Info, Clock, ClipboardList } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useHomeInactivity } from "@/hooks/use-inactivity";
 import logoImage from "@assets/logo.png";
@@ -142,12 +142,23 @@ export default function Landing() {
       </main>
 
       <footer className="p-6">
-        <div className="max-w-7xl mx-auto text-center">
-          <Link href="/admin/login">
-            <span className="text-sm text-muted-foreground hover:text-foreground underline cursor-pointer" data-testid="link-admin">
-              Admin Access
-            </span>
+        <div className="max-w-7xl mx-auto text-center space-y-4">
+          <Link href="/feedback">
+            <button
+              data-testid="button-feedback"
+              className="inline-flex items-center gap-2 px-6 py-3 bg-primary text-primary-foreground rounded-lg hover-elevate active-elevate-2 transition-all"
+            >
+              <ClipboardList className="w-5 h-5" />
+              <span className="font-medium">Provide Feedback</span>
+            </button>
           </Link>
+          <div>
+            <Link href="/admin/login">
+              <span className="text-sm text-muted-foreground hover:text-foreground underline cursor-pointer" data-testid="link-admin">
+                Admin Access
+              </span>
+            </Link>
+          </div>
         </div>
       </footer>
     </div>

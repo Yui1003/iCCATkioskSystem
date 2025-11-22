@@ -11,6 +11,7 @@ import Events from "@/pages/events";
 import StaffDirectory from "@/pages/staff";
 import About from "@/pages/about";
 import Screensaver from "@/pages/screensaver";
+import FeedbackPage from "@/pages/feedback";
 
 import AdminLogin from "@/pages/admin-login";
 import AdminDashboard from "@/pages/admin-dashboard";
@@ -31,6 +32,7 @@ function Router() {
       <Route path="/events" component={Events} />
       <Route path="/staff" component={StaffDirectory} />
       <Route path="/about" component={About} />
+      <Route path="/feedback" component={FeedbackPage} />
       <Route path="/screensaver" component={Screensaver} />
       
       <Route path="/admin/login" component={AdminLogin} />

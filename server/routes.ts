@@ -11,6 +11,7 @@ import {
   insertWalkpathSchema,
   insertDrivepathSchema,
   insertSettingSchema,
+  insertFeedbackSchema,
   canHaveStaff,
   type POIType
 } from "@shared/schema";
@@ -127,6 +128,77 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: 'Invalid request body', details: error.errors });
       }
       res.status(400).json({ error: 'Failed to update setting' });
+    }
+  });
+
+  // Feedback routes
+  app.get('/api/feedback', async (req, res) => {
+    try {
+      const feedbacks = await storage.getFeedbacks();
+      res.json(feedbacks);
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to fetch feedbacks' });
+    }
+  });
+
+  app.post('/api/feedback', async (req, res) => {
+    try {
+      const data = insertFeedbackSchema.parse(req.body);
+      const feedback = await storage.createFeedback(data);
+      res.status(201).json(feedback);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: 'Invalid feedback data', details: error.errors });
+      }
+      res.status(500).json({ error: 'Failed to create feedback' });
+    }
+  });
+
+  app.get('/api/feedback/export', async (req, res) => {
+    try {
+      const XLSX = await import('xlsx');
+      const feedbacks = await storage.getFeedbacks();
+      
+      // Format data for Excel
+      const excelData = feedbacks.map((f) => ({
+        'Timestamp': new Date(f.timestamp).toLocaleString('en-US', {
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit',
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit',
+          hour12: false
+        }),
+        'User #': f.userId,
+        'Functional Suitability': f.avgFunctionalSuitability.toFixed(2),
+        'Performance Efficiency': f.avgPerformanceEfficiency.toFixed(2),
+        'Compatibility': f.avgCompatibility.toFixed(2),
+        'Usability': f.avgUsability.toFixed(2),
+        'Reliability': f.avgReliability.toFixed(2),
+        'Security': f.avgSecurity.toFixed(2),
+        'Maintainability': f.avgMaintainability.toFixed(2),
+        'Portability': f.avgPortability.toFixed(2),
+        'UX Items': f.avgUxItems.toFixed(2),
+        'Comments': f.comments || ''
+      }));
+
+      // Create workbook and worksheet
+      const worksheet = XLSX.utils.json_to_sheet(excelData);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, 'Feedback');
+
+      // Generate buffer
+      const buffer = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
+
+      // Set headers for file download
+      const filename = `iccat-feedbacks-${new Date().toISOString().split('T')[0]}.xlsx`;
+      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+      res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+      res.send(buffer);
+    } catch (error) {
+      console.error('Excel export error:', error);
+      res.status(500).json({ error: 'Failed to export feedbacks' });
     }
   });
 

@@ -3,7 +3,7 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Settings, Loader2, Power } from "lucide-react";
+import { Settings, Loader2, Power, Download } from "lucide-react";
 import AdminLayout from "@/components/admin-layout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -296,6 +296,32 @@ export default function AdminSettings() {
                   </form>
                 </Form>
               )}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Download className="w-5 h-5" />
+                Feedback Management
+              </CardTitle>
+              <CardDescription>
+                Download user feedback data in Excel format
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground mb-4">
+                Export all submitted feedback responses with calculated category averages to an Excel spreadsheet.
+              </p>
+              <Button
+                variant="default"
+                onClick={() => window.location.href = '/api/feedback/export'}
+                data-testid="button-download-feedback"
+                className="gap-2"
+              >
+                <Download className="w-4 h-4" />
+                Download Feedback Excel
+              </Button>
             </CardContent>
           </Card>
 
