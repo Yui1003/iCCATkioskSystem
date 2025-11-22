@@ -168,28 +168,48 @@ export default function CampusMap({
     };
   }, [onMapClick]);
 
-  // Add campus boundary constraint
+  // Add campus boundary constraint with dynamic expansion on zoom
   useEffect(() => {
     if (!mapInstanceRef.current) return;
 
     const L = window.L;
     const map = mapInstanceRef.current;
 
-    // Define campus boundary (CCAT Campus, Cavite State University)
-    // Expanded to allow more panning when zoomed in while keeping campus focused
-    const campusBounds = L.latLngBounds(
+    // Define campus boundaries
+    // Tight boundary for default zoom
+    const tightBounds = L.latLngBounds(
+      L.latLng(14.4002, 120.8650),  // Southwest corner - tight
+      L.latLng(14.4047, 120.8695)   // Northeast corner - tight
+    );
+
+    // Expanded boundary for when zoomed in
+    const expandedBounds = L.latLngBounds(
       L.latLng(14.3970, 120.8610),  // Southwest corner - expanded
       L.latLng(14.4080, 120.8740)   // Northeast corner - expanded
     );
 
-    // Set max bounds - prevents panning/zooming outside this area
-    map.setMaxBounds(campusBounds);
+    const updateBounds = () => {
+      const currentZoom = map.getZoom();
+      // Use tight bounds at default zoom, expanded when zoomed in further
+      if (currentZoom > 17.5) {
+        map.setMaxBounds(expandedBounds);
+      } else {
+        map.setMaxBounds(tightBounds);
+      }
+    };
+
+    // Initial bounds
+    updateBounds();
+
+    // Listen for zoom changes
+    map.on('zoom', updateBounds);
     
     // Restrict zoom levels to stay focused on campus
     map.setMinZoom(18);
     map.setMaxZoom(19);
 
     return () => {
+      map.off('zoom', updateBounds);
       map.setMaxBounds(null);
     };
   }, []);
