@@ -33,6 +33,14 @@ export default function GetDirectionsDialog({
   const [showVehicleSelector, setShowVehicleSelector] = React.useState(false);
   const [selectedVehicle, setSelectedVehicle] = React.useState<VehicleType | null>(null);
 
+  // Reset vehicle selection when dialog opens with a new destination
+  React.useEffect(() => {
+    if (open) {
+      setSelectedVehicle(null);
+      setShowVehicleSelector(false);
+    }
+  }, [open, destination]);
+
   const handleNavigate = () => {
     if (selectedStart) {
       if (mode === 'driving' && !selectedVehicle) {
