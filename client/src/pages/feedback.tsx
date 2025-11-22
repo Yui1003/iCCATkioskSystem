@@ -170,7 +170,7 @@ export default function FeedbackPage() {
       // Scroll to the first unanswered question
       const ref = sectionRefs.current[firstMissingField];
       if (ref) {
-        ref.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        ref.scrollIntoView({ behavior: 'smooth', block: 'center' });
         // Auto-unhighlight after 3 seconds
         setTimeout(() => setHighlightedField(null), 3000);
       }
