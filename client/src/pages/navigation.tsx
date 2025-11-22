@@ -340,7 +340,8 @@ export default function Navigation() {
       }
 
       // Phase 1: Driving/Riding to parking
-      const pathType = vehicleType === 'bike' ? 'walking' : 'driving';
+      // All vehicle types (car, motorcycle, bike) should use drivepaths
+      const pathType = 'driving';
       const drivingPolyline = await calculateRouteClientSide(start, parkingLocation, pathType);
       
       if (!drivingPolyline) {
